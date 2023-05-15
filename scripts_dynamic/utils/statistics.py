@@ -125,6 +125,65 @@ def group_diff_max_stat_perm(
 
     return group_diff, statistics, pvalues
 
+def group_diff_cluster_perm_2d(x1, x2, bonferroni_ntest=None):
+    """Statistical significance testing on the frequency axes for the
+    difference between two groups.
+
+    This function performs a cluster permutation test as a wrapper for
+    `mne.stats.permutation_cluster_test()`.
+
+    Parameters
+    ----------
+    x1 : np.ndarray
+        PSD of the first group. Shape must be (n_subjects, n_channels, n_freqs).
+    x2 : np.ndarray
+        PSD of the second group. Shape must be (n_subjects, n_channels, n_freqs).
+    bonferroni_ntest : int
+        Number of tests to be used for Bonferroni correction. Default to None.
+
+    Returns
+    -------
+    t_obs : np.ndarray
+        t-statistic values for all variables. Shape is (n_freqs,).
+    clusters : list
+        List of tuple of ndarray, each of which contains the indices that form the
+        given cluster along the tested dimension. If bonferroni_ntest was given,
+        clusters after Bonferroni correction are returned.
+    cluster_pv : np.ndarray
+        P-value for each cluster. If bonferroni_ntest was given, corrected p-values
+        are returned.
+    H0 : np.ndarray 
+        Max cluster level stats observed under permutation.
+        Shape is (n_permutations,)
+    """
+
+    # Average PSD over channels/parcels
+    X = [
+        np.mean(x1, axis=1),
+        np.mean(x2, axis=1)
+    ] # dim: (n_subjects, n_parcels, n_freqs) -> (n_subjects, n_freqs)
+
+    # Perform cluster permutations over frequencies
+    t_obs, clusters, cluster_pv, H0 = mne.stats.permutation_cluster_test(
+        X,
+        threshold=3, # cluster-forming threshold
+        n_permutations=1500,
+        tail=0,
+        stat_fun=mne.stats.ttest_ind_no_p,
+        adjacency=None,
+    )
+
+    # Apply Bonferroni correction
+    if bonferroni_ntest:
+        cluster_pv_corrected = np.array(cluster_pv) * bonferroni_ntest
+        sel_idx = np.where(cluster_pv_corrected < 0.05)[0]
+        clusters = [clusters[i] for i in sel_idx]
+        cluster_pv = cluster_pv[sel_idx]
+        print(f"After Boneferroni correction: Found {len(clusters)} clusters")
+        print(f"\tCluster p-values: {cluster_pv}")
+
+    return t_obs, clusters, cluster_pv, H0
+
 def group_diff_cluster_perm_3d(
         data, 
         assignments, 
