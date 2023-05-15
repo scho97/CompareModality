@@ -157,7 +157,7 @@ if __name__ == "__main__":
             parcellation_file=parcellation_file,
             plot_kwargs={"edge_cmap": "RdBu_r", "figure": fig, "axes": ax},
         )
-        fig.savefig(os.path.join(SAVE_DIR, "network_tscore.png"))
+        fig.savefig(os.path.join(SAVE_DIR, "network_tscore.png"), transparent=True)
         plt.close(fig)
 
         # Plot thresholded graph network
