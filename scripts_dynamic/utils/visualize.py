@@ -177,9 +177,11 @@ def plot_grouped_violin(data, group_idx, method_name, filename, ylbl=None, pval=
                 features >= np.percentile(features, 75) + 1.5 * stats.iqr(features),
                 features <= np.percentile(features, 25) - 1.5 * stats.iqr(features),
             )
-            n_outliers = np.sum(outlier_flag)
+            n_outliers = np.sum(outlier_flag).astype(int)
             if n_outliers > 0:
-                print(f"\t[Mode {n}] # outliers: {n_outliers} subjects")
+                n_out_young = np.sum([1 for i in group_idx[0] if outlier_flag[i] == True]).astype(int)
+                n_out_old = n_outliers - n_out_young
+                print(f"\t[State/Mode {n}] # outliers: {n_outliers} subjects ({n_out_young} young, {n_out_old} old)")
             typical_flag = np.invert(outlier_flag)
             features = features[typical_flag]
             group_lbl, feature_idx = [], []
