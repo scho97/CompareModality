@@ -2,23 +2,24 @@
 
 """
 
-import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 
+from tqdm.auto import trange
 from scipy import stats
 from osl_dynamics import analysis
 from osl_dynamics.utils import plotting
 from osl_dynamics.utils.parcellation import Parcellation
 from utils.data import divide_psd_by_age
-from utils.statistics import group_diff_cluster_perm_3d
+from utils.statistics import (group_diff_cluster_perm_2d, 
+                              group_diff_cluster_perm_3d)
 
-from nilearn.plotting import plot_markers
 from matplotlib.transforms import Bbox
 from matplotlib.colors import ListedColormap
+from nilearn.plotting import plot_markers
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
@@ -450,10 +451,124 @@ def plot_selected_parcel_psd(edges, f, psd, filename):
 
     return None
 
-def plot_mode_spectra_group_diff(f, psd, ts, group_idx, parcellation_file, method, bonferroni_ntest, filename):
+def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_ntest, filename):
     """Plots state/mode-specific PSDs and their between-group statistical differences.
 
-    This function tests statistical difference using a cluster permutation test on a 
+    This function tests statistical differences using a cluster permutation test on the
+    frequency axis.
+
+    Parameters
+    ----------
+    f : np.ndarray
+        Frequencies of the power spectra and coherences. Shape is (n_freqs,).
+    psd : np.ndarray
+        Power spectra for each subject and state/mode. Shape must be (n_subjects,
+        n_states, n_channels, n_freqs).
+    ts : list of np.ndarray
+        Time series data for each subject. Shape must be (n_subjects, n_samples,
+        n_channels).
+    group_idx : list of lists
+        List containing indices of subjects in each group.
+    method : str
+        Type of the dynamic model. Can be "hmm" or "dynemo".
+    bonferroni_ntest : int
+        Number of tests to use for Bonferroni correction. If None, Bonferroni
+        correction will not take place.
+    filename : str
+        Path for saving the figure.
+    """
+
+    # Set plot labels
+    if method == "hmm":
+        lbl = "State"
+    elif method == "dynemo":
+        lbl = "Mode"
+
+    # Get PSDs and weights for each age group
+    psd_young, psd_old, w_young, w_old = divide_psd_by_age(psd, ts, group_idx)
+    gpsd_young = np.average(psd_young, axis=0, weights=w_young)
+    gpsd_old = np.average(psd_old, axis=0, weights=w_old)
+    # dim (gpsd): (n_modes, n_parcels, n_freqs)
+
+    # Build a colormap
+    qcmap = plt.rcParams["axes.prop_cycle"].by_key()["color"] # qualitative
+
+    # Plot mode-specific PSDs and their statistical difference
+    fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(26, 10))
+    k, j = 0, 0 # subplot indices
+    for n in range(len(gpsd_young)):
+        print(f"Plotting {lbl} {n + 1}")
+        
+        # Set the row index
+        if (n % 4 == 0) and (n != 0):
+            k += 1
+        
+        # Perform cluster permutation tests on mode-specific PSDs
+        t_obs, clu_idx, _, _ = group_diff_cluster_perm_2d(
+            x1=psd_old[:, n, :, :],
+            x2=psd_young[:, n, :, :],
+            bonferroni_ntest=bonferroni_ntest,
+        )
+        n_clusters = len(clu_idx)
+
+        # Average group-level PSDs over the parcels
+        py = np.mean(gpsd_young[n], axis=0)
+        po = np.mean(gpsd_old[n], axis=0)
+        ey = np.std(gpsd_young[n], axis=0) / np.sqrt(gpsd_young.shape[0])
+        eo = np.std(gpsd_old[n], axis=0) / np.sqrt(gpsd_old.shape[0])
+
+        # Plot mode-specific group-level PSDs
+        ax[k, j].plot(f, py, c=qcmap[n], label="Young")
+        ax[k, j].plot(f, po, c=qcmap[n], label="Old", linestyle="--")
+        ax[k, j].fill_between(f, py - ey, py + ey, color=qcmap[n], alpha=0.1)
+        ax[k, j].fill_between(f, po - eo, po + eo, color=qcmap[n], alpha=0.1)
+        if n_clusters > 0:
+            for c in range(n_clusters):
+                ax[k, j].axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
+
+        # Shrink axes to make space for topographical maps
+        ax_pos = ax[k, j].get_position()
+        ax[k, j].set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
+
+        # Set labels
+        ax[k, j].set_xlabel('Frequency (Hz)', fontsize=14)
+        if j == 0:
+            ax[k, j].set_ylabel('PSD (a.u.)', fontsize=14)
+        ax[k, j].set_title(f'{lbl} {n + 1}', fontsize=14)
+        ax[k, j].ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
+        ax[k, j].tick_params(labelsize=14)
+        ax[k, j].yaxis.offsetText.set_fontsize(14)
+
+        # Plot observed statistics
+        end_pt = np.mean([py[-1], po[-1]])
+        criteria = np.mean([ax[k, j].get_ylim()[0], ax[k, j].get_ylim()[1] * 0.95])
+        if end_pt >= criteria:
+            inset_bbox = (0, -0.22, 1, 1)
+        if end_pt < criteria:
+            inset_bbox = (0, 0.28, 1, 1)
+        ax_inset = inset_axes(ax[k, j], width='40%', height='30%', 
+                              loc='center right', bbox_to_anchor=inset_bbox,
+                              bbox_transform=ax[k, j].transAxes)
+        ax_inset.plot(f, t_obs, color='k', lw=2) # plot t-spectra
+        for c in range(len(clu_idx)):
+            ax_inset.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
+        ax_inset.set_ylabel('t-statistics', fontsize=12)
+        ax_inset.tick_params(labelsize=12)
+
+        # Set the column index
+        j += 1
+        if (j % 4 == 0) and (j != 0):
+            j = 0
+
+    fig.savefig(filename)
+    plt.close(fig)
+
+    return None
+
+def plot_mode_spectra_group_diff_3d(f, psd, ts, group_idx, parcellation_file, method, bonferroni_ntest, filename):
+    """Plots state/mode-specific PSDs and their between-group statistical differences.
+
+    This function tests statistical differences using a cluster permutation test on the 
     spatial and frequency axes.
 
     Parameters
@@ -558,7 +673,6 @@ def plot_mode_spectra_group_diff(f, psd, ts, group_idx, parcellation_file, metho
         # Re-order to use colour to indicate anterior->posterior location
         order = np.argsort(roi_centers[:, 1])
         roi_centers = roi_centers[order]
-
         
         # Plot topographical maps
         for c in range(n_clusters):
@@ -568,7 +682,7 @@ def plot_mode_spectra_group_diff(f, psd, ts, group_idx, parcellation_file, metho
             # Plot parcel topographical map
             clust_pidx_ordered = sorted([list(order).index(pidx) for pidx in clust_pidx[c]])
             topo_roi = roi_centers[clust_pidx_ordered, :]
-            print(f"{len(topo_roi)} ROIs selected for topogrphical map.")
+            print(f"{len(topo_roi)} ROIs selected for the topographical map.")
             topo_cmap = ListedColormap(scmap[clust_pidx_ordered, :])
             plot_markers(
                 np.arange(len(topo_roi)),
@@ -604,8 +718,8 @@ def plot_mode_spectra_group_diff(f, psd, ts, group_idx, parcellation_file, metho
         if end_pt < criteria:
             inset_bbox = (0, 0.28, 1, 1)
         ax_inset = inset_axes(ax[k, j], width='40%', height='30%', 
-                                loc='center right', bbox_to_anchor=inset_bbox,
-                                bbox_transform=ax[k, j].transAxes)
+                              loc='center right', bbox_to_anchor=inset_bbox,
+                              bbox_transform=ax[k, j].transAxes)
         for t in reversed(range(n_parcels)):
             ax_inset.plot(f, obs[:, t], color=scmap[t, :]) # plot t-spectra for each channel
         for c in range(len(clu)):
