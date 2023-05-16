@@ -137,7 +137,7 @@ def plot_surfaces(
             colorbar=False,
             figure=figure,
             axes=axis,
-            cmap=plt.cm.inferno,
+            cmap=plt.cm.plasma,
             alpha=0.9,
             vmax=vmax,
             plot_abs=False,
@@ -340,7 +340,7 @@ class GroupPSDDifference():
                         node_vmax=vmax,
                         alpha=0.9,
                         colorbar=False,
-                        node_cmap=plt.cm.inferno,
+                        node_cmap=plt.cm.plasma,
                         axes=topo_ax,
                     )
                 elif topo_type == "surface":
@@ -523,7 +523,7 @@ class GroupPSDDifference():
                         node_vmax=vmax,
                         alpha=0.9,
                         colorbar=False,
-                        node_cmap=plt.cm.inferno,
+                        node_cmap=plt.cm.plasma,
                         axes=topo_ax,
                     )
                 elif topo_type == "surface":
@@ -714,7 +714,7 @@ class GroupPSDDifference():
                         node_vmax=vmax_top,
                         alpha=0.9,
                         colorbar=False,
-                        node_cmap=plt.cm.inferno,
+                        node_cmap=plt.cm.plasma,
                         axes=topo_ax,
                     )
                 elif topo_type == "surface":
@@ -752,7 +752,7 @@ class GroupPSDDifference():
                         node_vmax=vmax_bottom,
                         alpha=0.9,
                         colorbar=False,
-                        node_cmap=plt.cm.inferno,
+                        node_cmap=plt.cm.plasma,
                         axes=topo_ax,
                     )
                 elif topo_type == "surface":
