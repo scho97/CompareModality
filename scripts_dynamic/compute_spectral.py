@@ -172,22 +172,35 @@ if __name__ == "__main__":
     # ---------------------------- #
     print("Step 4 - Analyzing spectral information ...")
 
+    cluster_dimension = ["Frequency"]
+
     # Cluster permutation test on PSDs
     if model_type == "hmm":
         input_psd = psd.copy()
     if model_type == "dynemo":
         input_psd = np.sum(psd, axis=1)
 
-    visualize.plot_mode_spectra_group_diff(
-        f,
-        input_psd,
-        ts,
-        group_idx=[young_idx, old_idx],
-        parcellation_file=parcellation_file,
-        method=model_type,
-        bonferroni_ntest=8, # EDIT
-        filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png")
-    )
+    if len(cluster_dimension) == 2:
+        visualize.plot_mode_spectra_group_diff_3d(
+            f,
+            input_psd,
+            ts,
+            group_idx=[young_idx, old_idx],
+            parcellation_file=parcellation_file,
+            method=model_type,
+            bonferroni_ntest=8,
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png")
+        )
+    else:
+        visualize.plot_mode_spectra_group_diff_2d(
+            f,
+            input_psd,
+            ts,
+            group_idx=[young_idx, old_idx],
+            method=model_type,
+            bonferroni_ntest=8,
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png")
+        )
 
     # Cluster permutation test on PSDs (mean-subtracted)
     if model_type == "hmm":
@@ -196,16 +209,27 @@ if __name__ == "__main__":
         input_psd = psd[:, 0, :, :, :] # use regression coefficients
     # NOTE: The mean across states/modes is subtracted from the PSDs subject-wise.
 
-    visualize.plot_mode_spectra_group_diff(
-        f,
-        input_psd,
-        ts,
-        group_idx=[young_idx, old_idx],
-        parcellation_file=parcellation_file,
-        method=model_type,
-        bonferroni_ntest=8, # EDIT
-        filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png")
-    )
+    if len(cluster_dimension) == 2:
+        visualize.plot_mode_spectra_group_diff_3d(
+            f,
+            input_psd,
+            ts,
+            group_idx=[young_idx, old_idx],
+            parcellation_file=parcellation_file,
+            method=model_type,
+            bonferroni_ntest=8,
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png")
+        )
+    else:
+        visualize.plot_mode_spectra_group_diff_2d(
+            f,
+            input_psd,
+            ts,
+            group_idx=[young_idx, old_idx],
+            method=model_type,
+            bonferroni_ntest=8,
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png")
+        )
 
     # Plot PSD (mean-subtracted) vs. Coherence
     if model_type == "hmm":
