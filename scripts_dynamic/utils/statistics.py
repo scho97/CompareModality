@@ -182,6 +182,10 @@ def group_diff_cluster_perm_2d(x1, x2, bonferroni_ntest=None):
         print(f"After Boneferroni correction: Found {len(clusters)} clusters")
         print(f"\tCluster p-values: {cluster_pv}")
 
+    # Order clusters by ascending frequencies
+    forder = np.argsort([c[0].mean() for c in clusters])
+    clusters = [clusters[i] for i in forder]
+
     return t_obs, clusters, cluster_pv, H0
 
 def group_diff_cluster_perm_3d(
