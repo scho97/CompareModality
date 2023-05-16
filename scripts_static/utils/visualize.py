@@ -439,7 +439,7 @@ class GroupPSDDifference():
 
         # Add manual colorbar
         cb_ax = ax.inset_axes([0.78, 1.12, 0.03, 0.22])
-        cmap = plt.cm.plasma
+        cmap = plt.cm.inferno
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         cb = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cb_ax, orientation='vertical')
         cb.ax.set_yticks(np.linspace(vmin, vmax, 3))
