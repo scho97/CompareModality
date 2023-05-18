@@ -84,14 +84,6 @@ if __name__ == "__main__":
     PSD_DIFF.prepare_data()
     PSD_DIFF.plot_psd_diff(clusters=clu, save_dir=SAVE_DIR)
 
-    # Alpha = GroupPSDDifference(freqs, psd_y, psd_o, data_space, modality)
-    # Alpha.prepare_data()
-    # Alpha.plot_diff_alpha(clusters=clu, save_dir=SAVE_DIR)
-
-    # Low_Beta = GroupPSDDifference(freqs, psd_y, psd_o, data_space, modality)
-    # Low_Beta.prepare_data()
-    # Low_Beta.plot_diff_low_beta(clusters=clu, save_dir=SAVE_DIR)
-
     # Set seaborn styles
     cmap = sns.color_palette("deep")
     sns.set_style("white")
