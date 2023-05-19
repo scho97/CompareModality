@@ -12,6 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from sys import argv
 from utils.analysis import get_peak_frequency
+from utils.array_ops import get_mean_error
 from utils.statistics import cluster_perm_test, stat_ind_two_samples
 from utils.visualize import GroupPSDDifference, categrozie_pvalue
 
@@ -34,16 +35,24 @@ if __name__ == "__main__":
         data = pickle.load(input_path)
 
     freqs = data["freqs"]
-    avg_psd_y = data["avg_psd_y"]
-    avg_psd_o = data["avg_psd_o"]
-    err_psd_y = data["err_psd_y"]
-    err_psd_o = data["err_psd_o"]
-    weights_y = data["weights_y"]
-    weights_o = data["weights_o"]
-    n_young = data["n_young"]
-    n_old = data["n_old"]
     psd_y = data["young_psd"]
     psd_o = data["old_psd"]
+    psd = data["psd"]
+    weights_y = data["weights_y"]
+    weights_o = data["weights_o"]
+    weights = data["weights"]
+    n_young = len(psd_y)
+    n_old = len(psd_o)
+
+    # Average PSDs across subjects to get the group-level PSDs for each age group
+    gpsd = np.average(psd, axis=0, weights=weights)
+    gpsd_y = np.average(psd_y, axis=0, weights=weights_y)
+    gpsd_o = np.average(psd_o, axis=0, weights=weights_o)
+
+    # Compute the mean and standard errors over channels
+    avg_psd, err_psd = get_mean_error(gpsd)
+    avg_psd_y, err_psd_y = get_mean_error(gpsd_y)
+    avg_psd_o, err_psd_o = get_mean_error(gpsd_o)
 
     # Report alpha peaks
     young_peak = get_peak_frequency(freqs, avg_psd_y, freq_range=[5, 15])
@@ -58,10 +67,12 @@ if __name__ == "__main__":
 
     # Plot group-level (i.e., subject-averaged) PSDs
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
+    plt.plot(freqs, avg_psd, color=cmap[7], lw=2, label='All (n={})'.format(n_young + n_old))
+    plt.fill_between(freqs, avg_psd - err_psd, avg_psd + err_psd, color=cmap[7], alpha=0.4)
     plt.plot(freqs, avg_psd_y, color=cmap[0], lw=2, label='Young 20-35 (n={})'.format(n_young))
-    plt.fill_between(freqs, avg_psd_y - err_psd_y, avg_psd_y + err_psd_y, alpha=0.4)
+    plt.fill_between(freqs, avg_psd_y - err_psd_y, avg_psd_y + err_psd_y, color=cmap[0], alpha=0.4)
     plt.plot(freqs, avg_psd_o, color=cmap[3], lw=2, label='Old 55-80 (n={})'.format(n_old))
-    plt.fill_between(freqs, avg_psd_o - err_psd_o, avg_psd_o + err_psd_o, alpha=0.4)
+    plt.fill_between(freqs, avg_psd_o - err_psd_o, avg_psd_o + err_psd_o, color=cmap[3], alpha=0.4)
     ax.set_xlabel('Frequency (Hz)', fontsize=14)
     ax.set_ylabel('PSD (a.u.)', fontsize=14)
     ax.set_ylim(0, 0.07)
