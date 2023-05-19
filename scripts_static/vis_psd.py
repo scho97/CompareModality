@@ -33,8 +33,7 @@ if __name__ == "__main__":
     with open(DATA_DIR + "/psd.pkl", "rb") as input_path:
         data = pickle.load(input_path)
 
-    freq_y = data["freq_y"]
-    freq_o = data["freq_o"]
+    freqs = data["freqs"]
     avg_psd_y = data["avg_psd_y"]
     avg_psd_o = data["avg_psd_o"]
     err_psd_y = data["err_psd_y"]
@@ -45,10 +44,6 @@ if __name__ == "__main__":
     n_old = data["n_old"]
     psd_y = data["young_psd"]
     psd_o = data["old_psd"]
-    if not (freq_y == freq_o).all():
-        raise ValueError("Frequency vector for young and old participants should match.")
-    else:
-        freqs = freq_y
 
     # Report alpha peaks
     young_peak = get_peak_frequency(freqs, avg_psd_y, freq_range=[5, 15])

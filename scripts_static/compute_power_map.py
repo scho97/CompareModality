@@ -28,14 +28,10 @@ if __name__ == "__main__":
     with open(os.path.join(DATA_DIR, f"psd.pkl"), "rb") as input_path:
         data = pickle.load(input_path)
     
+    freqs = data["freqs"]
     psd_y = data["young_psd"]
     psd_o = data["old_psd"]
     psds = np.concatenate((psd_y, psd_o), axis=0)
-    freq_y = data["freq_y"]
-    freq_o = data["freq_o"]
-    if (freq_y != freq_o).any():
-        raise ValueError("Frequency vectors of each age group do not match.")
-    freqs = freq_y
     n_subjects = psds.shape[0]
     n_young = data["n_young"]
 
