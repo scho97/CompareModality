@@ -106,27 +106,20 @@ if __name__ == "__main__":
         raise ValueError("Frequency vectors of each age group do not match.")
     freqs = fy
 
-    # Average PSDs across subjects to get the group-level PSDs for each age group
-    gpsdy = np.average(psdy, axis=0, weights=wy)
-    gpsdo = np.average(psdo, axis=0, weights=wo)
-
-    # Compute the mean and standard errors over channels
-    py, ey = utils.array_ops.get_mean_error(gpsdy)
-    po, eo = utils.array_ops.get_mean_error(gpsdo)
+    # Get PSDs and weights of the entire dataset
+    psd = np.concatenate((psdy, psdo), axis=0)
+    n_samples = [d.shape[0] for d in input_young + input_old]
+    w = np.array(n_samples) / np.sum(n_samples)
 
     # Save results
     print("Saving results ... ")
-    output = {"freqs": freqs, 
-              "avg_psd_y": py,
-              "err_psd_y": ey,
-              "weights_y": wy,
-              "avg_psd_o": po,
-              "err_psd_o": eo,
-              "weights_o": wo,
-              "n_young": len(young_idx),
-              "n_old": len(old_idx),
+    output = {"freqs": freqs,              
               "young_psd": psdy,
-              "old_psd": psdo}
+              "old_psd": psdo,
+              "psd": psd,
+              "weights_y": wy,
+              "weights_o": wo,
+              "weights": w}
     with open(SAVE_DIR + "/psd.pkl", "wb") as output_path:
         pickle.dump(output, output_path)
     output_path.close()
