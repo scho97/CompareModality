@@ -59,17 +59,20 @@ if __name__ == "__main__":
     # Set visualization parameters
     matplotlib.rc('xtick', labelsize=14) 
     matplotlib.rc('ytick', labelsize=14)
+    cmap = sns.color_palette("deep")
 
     # Plot group-level (i.e., subject-averaged) PSDs
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 5))
-    plt.plot(freqs, avg_psd_y, color='tab:blue', lw=2, label='Young 20-35 (n={})'.format(n_young))
+    plt.plot(freqs, avg_psd_y, color=cmap[0], lw=2, label='Young 20-35 (n={})'.format(n_young))
     plt.fill_between(freqs, avg_psd_y - err_psd_y, avg_psd_y + err_psd_y, alpha=0.4)
-    plt.plot(freqs, avg_psd_o, color='tab:orange', lw=2, label='Old 55-80 (n={})'.format(n_old))
+    plt.plot(freqs, avg_psd_o, color=cmap[3], lw=2, label='Old 55-80 (n={})'.format(n_old))
     plt.fill_between(freqs, avg_psd_o - err_psd_o, avg_psd_o + err_psd_o, alpha=0.4)
-    ax.set_xlabel('Frequency (Hz)')
-    ax.set_ylabel('PSD (a.u.)')
+    ax.set_xlabel('Frequency (Hz)', fontsize=14)
+    ax.set_ylabel('PSD (a.u.)', fontsize=14)
     ax.set_ylim(0, 0.07)
     ax.spines[['top', 'right']].set_visible(False)
+    ax.spines[['bottom', 'left']].set_linewidth(2)
+    ax.tick_params(width=2)
     plt.legend(loc="upper right")
     plt.tight_layout()
     plt.savefig(os.path.join(SAVE_DIR, f'static_psd.png'))
@@ -83,9 +86,8 @@ if __name__ == "__main__":
     PSD_DIFF = GroupPSDDifference(freqs, psd_y, psd_o, data_space, modality)
     PSD_DIFF.prepare_data()
     PSD_DIFF.plot_psd_diff(clusters=clu, save_dir=SAVE_DIR)
-
+    
     # Set seaborn styles
-    cmap = sns.color_palette("deep")
     sns.set_style("white")
 
     # Average PSDs over channels/parcels
