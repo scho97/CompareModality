@@ -7,7 +7,6 @@ import os
 import pickle
 import numpy as np
 import matplotlib
-import matplotlib.pyplot as plt
 from utils.visualize import plot_group_power_map
 
 
