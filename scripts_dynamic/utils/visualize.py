@@ -8,13 +8,13 @@ import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 
-from tqdm.auto import trange
 from scipy import stats
 from osl_dynamics import analysis
 from osl_dynamics.utils import plotting
 from osl_dynamics.utils.parcellation import Parcellation
 from utils.data import divide_psd_by_age
-from utils.statistics import (group_diff_cluster_perm_2d, 
+from utils.statistics import (group_diff_mne_cluster_perm_2d,
+                              group_diff_cluster_perm_2d,
                               group_diff_cluster_perm_3d)
 
 from matplotlib.transforms import Bbox
@@ -451,7 +451,7 @@ def plot_selected_parcel_psd(edges, f, psd, filename):
 
     return None
 
-def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_ntest, filename):
+def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_ntest, filename, test_type="glmtools"):
     """Plots state/mode-specific PSDs and their between-group statistical differences.
 
     This function tests statistical differences using a cluster permutation test on the
@@ -476,6 +476,9 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
         correction will not take place.
     filename : str
         Path for saving the figure.
+    test_type : str
+        Type of the cluster permutation test function to use. Should be "mne"
+        or "glmtools" (default).
     """
 
     # Set plot labels
@@ -504,11 +507,26 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
             k += 1
         
         # Perform cluster permutation tests on mode-specific PSDs
-        t_obs, clu_idx, _, _ = group_diff_cluster_perm_2d(
-            x1=psd_old[:, n, :, :],
-            x2=psd_young[:, n, :, :],
-            bonferroni_ntest=bonferroni_ntest,
-        )
+        if test_type == "mne":
+            # Run permutation test
+            t_obs, clu_idx, _, _ = group_diff_mne_cluster_perm_2d(
+                x1=psd_old[:, n, :, :],
+                x2=psd_young[:, n, :, :],
+                bonferroni_ntest=bonferroni_ntest,
+            )
+        if test_type == "glmtools":
+            # Define group assignments
+            group_assignments = np.zeros((len(psd),))
+            group_assignments[group_idx[1]] = 1
+            group_assignments[group_idx[0]] = 2
+            # Run permutation test
+            t_obs, clu_idx = group_diff_cluster_perm_2d(
+                data=psd[:, n, :, :],
+                assignments=group_assignments,
+                n_perm=1500,
+                metric="tstats",
+                bonferroni_ntest=bonferroni_ntest,
+            )
         n_clusters = len(clu_idx)
 
         # Average group-level PSDs over the parcels

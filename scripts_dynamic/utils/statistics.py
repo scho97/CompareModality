@@ -125,7 +125,7 @@ def group_diff_max_stat_perm(
 
     return group_diff, statistics, pvalues
 
-def group_diff_cluster_perm_2d(x1, x2, bonferroni_ntest=None):
+def group_diff_mne_cluster_perm_2d(x1, x2, bonferroni_ntest=None):
     """Statistical significance testing on the frequency axes for the
     difference between two groups.
 
@@ -139,7 +139,7 @@ def group_diff_cluster_perm_2d(x1, x2, bonferroni_ntest=None):
     x2 : np.ndarray
         PSD of the second group. Shape must be (n_subjects, n_channels, n_freqs).
     bonferroni_ntest : int
-        Number of tests to be used for Bonferroni correction. Default to None.
+        Number of tests to be used for Bonferroni correction. Defaults to None.
 
     Returns
     -------
@@ -188,6 +188,115 @@ def group_diff_cluster_perm_2d(x1, x2, bonferroni_ntest=None):
 
     return t_obs, clusters, cluster_pv, H0
 
+def group_diff_cluster_perm_2d(
+        data,
+        assignments,
+        n_perm,
+        metric="tstats",
+        bonferroni_ntest=1,
+        n_jobs=1,
+):
+    """Statistical significance testing on the frequency axes for the
+    difference between two groups.
+
+    This function fits a General Linear Model (GLM) with ordinary least 
+    squares and performs a cluster permutation test. It is a wrapper for 
+    `glmtools.permutations.ClusterPermutation()`.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data to be clustered. This will be the target data for the GLM.
+        The shape must be (n_subjects, n_channels, n_freqs).
+    assignments : np.ndarray
+        1D numpy array containing group assignments. A value of 1 indicates
+        Group 1 and a value of 2 indicates Group 2. Here, we test the contrast
+        abs(Group1 - Group2) > 0.
+    n_perm : int
+        Number of permutations.
+    metric : str
+        Metric to use to build the null distribution. Can be 'tstats' or 'copes'.
+    bonferroni_ntest : int
+        Number of tests to use for Bonferroni correction. Defaults to 1 (i.e., no
+        Bonferroni correction applied).
+    n_jobs : int
+        Number of processes to run in parallel. Defaults to 1.
+
+    Returns
+    -------
+    obs : np.ndarray
+        Statistic observed for all variables. Values can be 'tstats' or 'copes'
+        depending on the `metric`. Shape is (n_freqs,).
+    clusters : list of np.ndarray
+        List of ndarray, each of which contains the indices that form the given 
+        cluster along the tested dimension. If bonferroni_ntest was given, clusters 
+        after Bonferroni correction are returned.
+    """
+
+    # Average PSD over channels/parcels
+    data = np.mean(data, axis=1)
+
+    # Validation
+    if not isinstance(data, np.ndarray):
+        raise ValueError("data must be a numpy array.")
+    ndim = data.ndim
+    if ndim != 2:
+        raise ValueError("data must be 2D after averaging over channels/parcels.")
+    
+    if metric not in ["tstats", "copes"]:
+        raise ValueError("metric must be 'tstas' or 'copes'.")
+    
+    # Create GLM Dataset
+    data = glm.data.TrialGLMData(
+        data=data,
+        category_list=assignments,
+        dim_labels=["Subjects", "Frequencies"],
+    )
+
+    # Create design matrix
+    DC = glm.design.DesignConfig()
+    DC.add_regressor(name="Group1", rtype="Categorical", codes=1)
+    DC.add_regressor(name="Group2", rtype="Categorical", codes=2)
+    DC.add_contrast(name="GroupDiff", values=[1, -1])
+    design = DC.design_from_datainfo(data.info)
+
+    # Fit model and get metric values
+    model = glm.fit.OLSModel(design, data)
+    if metric == "tstats":
+        obs = np.squeeze(model.tstats)
+    if metric == "copes":
+        obs = np.squeeze(model.copes)
+
+    # Run cluster permutations over channels and frequencies
+    cft = 3 # cluster forming threshold
+    perm = glm.permutations.ClusterPermutation(
+        design=design,
+        data=data,
+        contrast_idx=0,
+        nperms=n_perm,
+        metric=metric,
+        tail=0, # two-sided test
+        cluster_forming_threshold=cft,
+        pooled_dims=(1,),
+        nprocesses=n_jobs,
+    )
+
+    # Extract significant clusters
+    percentile = (1 - (0.05 / (2 * bonferroni_ntest))) * 100 # use alpha threshold of 0.05
+    clu_masks, clu_stats = perm.get_sig_clusters(data, percentile)
+    if clu_stats is not None:
+        n_clusters = len(clu_stats)
+    else: n_clusters = 0
+    print(f"Number of significant clusters: {n_clusters}")
+    
+    # Get indices of significant channels and frequencies
+    clusters = [
+        np.arange(len(clu_masks))[clu_masks == n]
+        for n in range(1, n_clusters + 1)
+    ]
+
+    return obs, clusters
+
 def group_diff_cluster_perm_3d(
         data, 
         assignments, 
@@ -195,7 +304,7 @@ def group_diff_cluster_perm_3d(
         parcellation_file, 
         metric="tstats", 
         bonferroni_ntest=1, 
-        n_jobs=1
+        n_jobs=1,
 ):
     """Statistical significance testing on the spatial and frequency axes for 
     the difference between two groups.
