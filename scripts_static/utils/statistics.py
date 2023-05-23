@@ -94,7 +94,8 @@ def _check_stat_assumption(samples1, samples2, ks_alpha=0.05, ev_alpha=0.05):
     # Check normality assumption
     ks_pvals = []
     for s, samples in enumerate([samples1, samples2]):
-        res = stats.ks_1samp(samples, cdf=stats.norm.cdf)
+        stand_samples = stats.zscore(samples)
+        res = stats.ks_1samp(stand_samples, cdf=stats.norm.cdf)
         ks_pvals.append(res.pvalue)
         print(f"\t[KS Test] p-value (Sample #{s}): {res.pvalue}")
         if res.pvalue < ks_alpha:
