@@ -20,6 +20,7 @@ if __name__ == "__main__":
     modality = argv[1]
     model_type = argv[2]
     run_id = argv[3]
+    print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
 
     # Get names of the dataset and run directory
     if modality == "eeg":
