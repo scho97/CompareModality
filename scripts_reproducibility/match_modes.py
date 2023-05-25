@@ -1,4 +1,4 @@
-"""Match states and modes across model types and datasets
+"""Match states and modes across model types and datasets for the reference run
 
 """
 
@@ -103,8 +103,20 @@ if __name__ == "__main__":
     # Plot the correlations of matched time courses
     plot_verbose = True
     if plot_verbose:
-        plot_correlations(lemon_hmm_stc, camcan_hmm_stc, filename=os.path.join(BASE_DIR, "match1.png"))
-        plot_correlations(lemon_hmm_stc, lemon_dynemo_alpha, filename=os.path.join(BASE_DIR, "match2.png"))
-        plot_correlations(camcan_hmm_stc, camcan_dynemo_alpha, filename=os.path.join(BASE_DIR, "match3.png"))
+        plot_correlations(
+            lemon_hmm_stc,
+            camcan_hmm_stc,
+            filename=os.path.join(BASE_DIR, "match_eeg_meg_hmm.png"),
+        )
+        plot_correlations(
+            lemon_hmm_stc,
+            lemon_dynemo_alpha,
+            filename=os.path.join(BASE_DIR, "match_eeg_hmm_dynemo.png"),
+        )
+        plot_correlations(
+            camcan_hmm_stc,
+            camcan_dynemo_alpha,
+            filename=os.path.join(BASE_DIR, "match_meg_hmm_dynemo.png"),
+        )
 
     print("Matching complete.")
