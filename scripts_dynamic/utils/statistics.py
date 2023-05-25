@@ -431,3 +431,59 @@ def group_diff_cluster_perm_3d(
         channel_indices.append(cinds)
 
     return clu, obs, frequency_indices, channel_indices
+
+def detect_outliers(data, group_idx):
+    """Detects outliers from the data.
+
+    This function first standardizes the data into a standard normal distribution
+    and detects values outside [-3, 3]. The mean and standard deviation for the
+    standardization is computed from the entire data. Outliers are then detected
+    from each feature (column) vector and appended together.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        The data to detect outliers from. Shape must be (n_subjects,)
+        or (n_subjects, n_features).
+
+    Returns
+    -------
+    outlier_idx : np.ndarray or None
+        Unique subject indices of the outliers. If no outliers are detected,
+        returns None.
+    outlier_lbl : list of str or None
+        Labels for each outlier indicating which age group it comes from. If no
+        outliers are detected, returns None.
+    """
+
+    # Validation
+    if isinstance(data, list):
+        data = np.array(data)
+    if data.ndim == 1:
+        data = data[..., np.newaxis]
+    n_features = data.shape[1]
+    
+    # Standardize data
+    z_scores = (data - np.mean(data)) / np.std(data)
+
+    # Detect outliers
+    outliers = []
+    for n in range(n_features):
+        outlier_flag = np.abs(z_scores[:, n]) > 3
+        if np.any(outlier_flag):
+            outliers.append([(idx, "Young") for idx in group_idx[0] if outlier_flag[idx] == True])
+            outliers.append([(idx, "Old") for idx in group_idx[1] if outlier_flag[idx] == True])
+    
+    if outliers:
+        outliers = [item for olr in outliers for item in olr]
+        outlier_idx = list(list(zip(*outliers))[0])
+        outlier_lbl = list(list(zip(*outliers))[1])
+    else:
+        outlier_idx, outlier_lbl = None, None
+
+    # Exclude repeating outliers
+    if outlier_idx is not None:
+        outlier_idx, unique_idx = np.unique(outlier_idx, return_index=True)
+        outlier_lbl = [outlier_lbl[idx] for idx in unique_idx]
+
+    return outlier_idx, outlier_lbl
