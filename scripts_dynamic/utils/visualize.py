@@ -133,15 +133,15 @@ def plot_correlations(data1, data2, filename):
 
     return None
 
-def plot_grouped_violin(data, group_idx, method_name, filename, ylbl=None, pval=None, detect_outlier=False):
-    """Plots grouped violins
+def plot_grouped_violin(data, group_label, method_name, filename, ylbl=None, pval=None):
+    """Plots grouped violins.
 
     Parameters
     ----------
     data : np.ndarray or list
         Input data. Shape must be (n_subjects, n_features).
-    group_idx : list of lists
-        List containing indices of subjects in each group.
+    group_label : list of str
+        List containing group labels for each subject.
     method_name : str
         Type of the model used for getting the input data. Must be either
         "hmm" or "dynemo".
@@ -153,9 +153,6 @@ def plot_grouped_violin(data, group_idx, method_name, filename, ylbl=None, pval=
         P-values for each violin indicating staticial differences between
         the groups. If provided, statistical significance is plotted above the
         violins. Defaults to None.
-    detect_outlier : bool
-        Whether to exclude outliers in the distribution of each violin. If True,
-        outliers are detected using the interquartile range.
     """
 
     # Validation
@@ -168,43 +165,11 @@ def plot_grouped_violin(data, group_idx, method_name, filename, ylbl=None, pval=
     # Number of features
     n_features = data.shape[1]
 
-    # Detect outliers
-    if detect_outlier:
-        print("Detecting outliers ...")
-        data_new, group_new, feature_new = [], [], []
-        for n in range(n_features):
-            features = data[:, n]
-            outlier_flag = np.logical_or(
-                features >= np.percentile(features, 75) + 1.5 * stats.iqr(features),
-                features <= np.percentile(features, 25) - 1.5 * stats.iqr(features),
-            )
-            n_outliers = np.sum(outlier_flag).astype(int)
-            if n_outliers > 0:
-                n_out_young = np.sum([1 for i in group_idx[0] if outlier_flag[i] == True]).astype(int)
-                n_out_old = n_outliers - n_out_young
-                print(f"\t[State/Mode {n}] # outliers: {n_outliers} subjects ({n_out_young} young, {n_out_old} old)")
-            typical_flag = np.invert(outlier_flag)
-            features = features[typical_flag]
-            group_lbl, feature_idx = [], []
-            for i, flag in enumerate(typical_flag):
-                if flag:
-                    group_lbl.append("Young" if i in group_idx[0] else "Old")
-                    feature_idx.append(n)           
-            data_new.append(features)
-            group_new.append(group_lbl)
-            feature_new.append(feature_idx)
-        # Make pandas dataframe
-        data_flatten = np.concatenate(data_new)
-        df = pd.DataFrame(data_flatten, columns=["Statistics"])
-        df["Age"] = np.concatenate(group_new)
-        df[lbl] = np.concatenate(feature_new)
-    else:
-        # Make pandas dataframe
-        print("Proceeding without detecting outliers ...")
-        data_flatten = np.reshape(data, data.size, order='F')
-        df = pd.DataFrame(data_flatten, columns=["Statistics"])
-        df["Age"] = ["Young" if n in group_idx[0] else "Old" for n in range(data.shape[0])] * n_features
-        df[lbl] = np.concatenate([np.ones((data.shape[0],)) * n for n in range(n_features)])
+    # Build dataframe
+    data_flatten = np.reshape(data, data.size, order='F')
+    df = pd.DataFrame(data_flatten, columns=["Statistics"])
+    df["Age"] = group_label * n_features
+    df[lbl] = np.concatenate([np.ones((data.shape[0],)) * n for n in range(n_features)])
 
     # Plot grouped split violins
     fig, ax = plt.subplots(nrows=1, ncols=1)
@@ -241,6 +206,7 @@ def plot_grouped_violin(data, group_idx, method_name, filename, ylbl=None, pval=
     ax.tick_params(labelsize=14)
     ax.get_legend().remove()
     # vp.legend(fontsize=10, bbox_to_anchor=(1.01, 1.15))
+    plt.tight_layout()
     fig.savefig(filename)
     plt.close(fig)
 
