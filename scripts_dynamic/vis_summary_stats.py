@@ -11,7 +11,8 @@ from osl_dynamics.inference import modes
 from osl_dynamics.analysis.statistics import group_diff_max_stat_perm
 from utils.data import (get_dynemo_mtc, 
                         get_group_idx_lemon, 
-                        get_group_idx_camcan)
+                        get_group_idx_camcan,
+                        load_order)
 from utils.visualize import plot_grouped_violin
 
 
@@ -31,18 +32,7 @@ if __name__ == "__main__":
 
     # Define best runs and their state/mode orders
     run_dir = f"run{run_id}_{model_type}"
-    order = None
-    if modality == "eeg":
-        if run_dir not in ["run6_hmm", "run2_dynemo"]:
-            raise ValueError("one of the EEG best runs should be selected.")
-        if model_type == "dynemo":
-            order = [1, 0, 2, 3, 7, 4, 6, 5]
-    else:
-        if run_dir not in ["run3_hmm", "run0_dynemo"]:
-            raise ValueError("one of the MEG best runs should be selected.")
-        if model_type == "hmm":
-            order = [6, 1, 3, 2, 5, 0, 4, 7]
-        else: order = [7, 6, 0, 5, 4, 1, 2, 3]
+    order = load_order(run_dir, modality)
 
     # Define training hyperparameters
     Fs = 250 # sampling frequency
@@ -79,6 +69,7 @@ if __name__ == "__main__":
     # Reorder states or modes if necessary
     if order is not None:
         print(f"Reordering {modality.upper()} state/mode time courses ...")
+        print(f"\tOrder: {order}")
         alpha = [a[:, order] for a in alpha] # dim: n_subjects x n_samples x n_modes
         cov = cov[order] # dim: n_modes x n_channels x n_channels
 
@@ -143,7 +134,7 @@ if __name__ == "__main__":
     sns.set_theme(style="white")
 
     # Perform max-t permutation tests
-    bonferroni_ntest = 8 # n_test = n_metrics x n_modality
+    bonferroni_ntest = 4 # n_test = n_metrics
     metric_names = ["FO", "LT", "INTV", "SR"]
     metric_full_names = ["Fractional Occupancy", "Mean Lifetimes (ms)", "Mean Intervals (s)", "Swithching Rates"]
     for i, stat in enumerate([fo, lt, intv, sr]):
