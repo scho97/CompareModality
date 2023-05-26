@@ -19,7 +19,7 @@ if __name__ == "__main__":
     data_space = "source"
     data_type = "aec"
     band_name = "wide"
-    bonferroni_ntest = 2 # n_test = n_modality x n_freq_bands
+    bonferroni_ntest = 1 # n_test = n_freq_bands
     print(f"[INFO] Modality: {modality.upper()}, Data Space: {data_space}, Data Type: {data_type}, Frequency Band: {band_name}")
 
     # Set parcellation file paths

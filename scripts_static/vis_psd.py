@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     # Perform a cluster permutation test on parcel-averaged PSDs
     print("*** Running Cluster Permutation Test ***")
-    _, clu, clu_pv, _ = cluster_perm_test(psd_y, psd_o, bonferroni_ntest=4) # n_test = n_data_space x n_modality
+    _, clu, clu_pv, _ = cluster_perm_test(psd_y, psd_o, bonferroni_ntest=2) # n_test = n_data_space
 
     # Plot group difference PSDs
     PSD_DIFF = GroupPSDDifference(freqs, psd_y, psd_o, data_space, modality)
@@ -111,8 +111,14 @@ if __name__ == "__main__":
     df = pd.DataFrame(data={"Peak": peaks, "Age": ages})
 
     # Test between-group difference in peak shifts
-    _, pval = stat_ind_two_samples(peaks_y, peaks_o, bonferroni_ntest=4) # n_test = n_modality x n_data_space
+    _, pval = stat_ind_two_samples(
+        peaks_y,
+        peaks_o,
+        bonferroni_ntest=2, # n_test = n_data_space
+        test="wilcoxon",
+    )
     pval_lbl = categrozie_pvalue(pval)
+    # NOTE: Make sure to check the assumptions first before specifying the statistical test.
 
     # Plot bar plot and statistical significance
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3.5, 4))
