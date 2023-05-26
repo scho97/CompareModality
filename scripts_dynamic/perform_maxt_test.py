@@ -13,7 +13,8 @@ from utils import (get_psd_coh,
                    get_group_idx_lemon, 
                    get_group_idx_camcan, 
                    group_diff_max_stat_perm, 
-                   plot_thresholded_map)
+                   plot_thresholded_map,
+                   load_order)
 
 
 if __name__ == "__main__":
@@ -30,20 +31,12 @@ if __name__ == "__main__":
    run_id = argv[3]
    print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
 
-   # Define best runs and their state/mode orders
+   catch_outlier = True
+   outlier_idx = [16, 100, 103, 107]
+
+   # Get state/mode orders for the specified run
    run_dir = f"run{run_id}_{model_type}"
-   order = None
-   if modality == "eeg":
-      if run_dir not in ["run6_hmm", "run2_dynemo"]:
-         raise ValueError("one of the EEG best runs should be selected.")
-      if model_type == "dynemo":
-         order = [1, 0, 2, 3, 7, 4, 6, 5]
-   else:
-      if run_dir not in ["run3_hmm", "run0_dynemo"]:
-         raise ValueError("one of the MEG best runs should be selected.")
-      if model_type == "hmm":
-         order = [6, 1, 3, 2, 5, 0, 4, 7]
-      else: order = [7, 6, 0, 5, 4, 1, 2, 3]
+   order = load_order(run_dir, modality)
 
    # Define training hyperparameters
    Fs = 250 # sampling frequency
@@ -119,8 +112,6 @@ if __name__ == "__main__":
    # Get HMM state time courses
    if model_type == "hmm":
       btc = modes.argmax_time_courses(alpha)
-      fo = modes.fractional_occupancies(btc) # dim: (n_subjects, n_states)
-      gfo = np.mean(fo, axis=0) # average over subjects
 
    # --------- [3] --------- #
    #      Load Spectra       #
@@ -133,7 +124,7 @@ if __name__ == "__main__":
    # Calculate subject-specific PSDs and coherences
    if model_type == "hmm":
       print("Computing HMM multitaper spectra ...")
-      f, psd, coh, w, gpsd, gcoh = get_psd_coh(
+      f, psd, coh, w = get_psd_coh(
          ts, btc, Fs,
          calc_type="mtp",
          save_dir=DATA_DIR,
@@ -141,12 +132,36 @@ if __name__ == "__main__":
       )
    if model_type == "dynemo":
       print("Computing DyNeMo glm spectra ...")
-      f, psd, coh, w, gpsd, gcoh = get_psd_coh(
+      f, psd, coh, w = get_psd_coh(
          ts, alpha, Fs,
          calc_type="glm",
          save_dir=DATA_DIR,
          n_jobs=n_jobs,
       )
+
+   # Exclude specified outliers
+   if catch_outlier:
+      print("Excluding subject outliers ...\n"
+              "\tOutlier indices: ", outlier_idx)
+      not_olr_idx = np.setdiff1d(np.arange(n_subjects), outlier_idx)
+      if model_type == "hmm":
+         btc = [btc[idx] for idx in not_olr_idx]
+      psd = psd[not_olr_idx]
+      coh = coh[not_olr_idx]
+      print(f"\tPSD shape: {psd.shape} | Coherence shape: {coh.shape}")
+      # Reorganize group assignments
+      group_assignments = group_assignments[not_olr_idx]
+      n_subjects -= len(outlier_idx)
+      print("\tTotal {} subjects | Young: {} | Old: {}".format(
+            n_subjects,
+            np.count_nonzero(group_assignments == 2),
+            np.count_nonzero(group_assignments == 1),
+      ))
+
+   # Get fractional occupancies to be used as weights
+   if model_type == "hmm":
+      fo = modes.fractional_occupancies(btc) # dim: (n_subjects, n_states)
+      gfo = np.mean(fo, axis=0) # average over subjects
 
    # ------------ [4] ----------- #
    #      Statistical Tests       #
@@ -171,7 +186,7 @@ if __name__ == "__main__":
    # dim: (n_subjects, n_modes, n_parcels, n_parcels)
 
    # Define the number of tests for Bonferroni correction
-   bonferroni_ntest = 8 # EDIT
+   bonferroni_ntest = n_class
    
    # Max-t permutation tests on the power maps
    print("[Power] Running Max-t Permutation Test ...")

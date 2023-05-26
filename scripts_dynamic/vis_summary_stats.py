@@ -30,7 +30,10 @@ if __name__ == "__main__":
     run_id = argv[3]
     print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
 
-    # Define best runs and their state/mode orders
+    catch_outlier = True
+    outlier_idx = [16, 100, 103, 107]
+
+    # Get state/mode orders for the specified run
     run_dir = f"run{run_id}_{model_type}"
     order = load_order(run_dir, modality)
 
@@ -61,6 +64,43 @@ if __name__ == "__main__":
     if modality == "meg":
         subj_ids = data["subject_ids"]
 
+    # Select young & old participants
+    PROJECT_DIR = f"/well/woolrich/projects/{data_name}"
+    if modality == "eeg":
+        dataset_dir = PROJECT_DIR + "/scho23/src_ec"
+        metadata_dir = PROJECT_DIR + "/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
+        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.npy"))
+        young_idx, old_idx = get_group_idx_lemon(metadata_dir, file_names)
+    if modality == "meg":
+        dataset_dir = PROJECT_DIR + "/winter23/src"
+        metadata_dir = PROJECT_DIR + "/cc700/meta/participants.tsv"
+        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc.npy"))
+        young_idx, old_idx = get_group_idx_camcan(metadata_dir, subj_ids=subj_ids)
+    print("Total {} subjects | Young: {} | Old: {}".format(
+        n_subjects, len(young_idx), len(old_idx),
+    ))
+    print("Young Index: ", young_idx)
+    print("Old Index: ", old_idx)
+
+    # Define group assignments
+    group_assignments = np.zeros((n_subjects,))
+    group_assignments[old_idx] = 1
+    group_assignments[young_idx] = 2
+
+    # Exclude specified outliers
+    if catch_outlier:
+        print("Excluding subject outliers ...\n"
+              "\tOutlier indices: ", outlier_idx)
+        # Reorganize group assignments
+        not_olr_idx = np.setdiff1d(np.arange(n_subjects), outlier_idx)
+        group_assignments = group_assignments[not_olr_idx]
+        n_subjects -= len(outlier_idx)
+        print("\tTotal {} subjects | Young: {} | Old: {}".format(
+              n_subjects,
+              np.count_nonzero(group_assignments == 2),
+              np.count_nonzero(group_assignments == 1),
+        ))
+
     # ----------------- [2] ------------------- #
     #      Preprocess inferred parameters       #
     # ----------------------------------------- #
@@ -85,29 +125,6 @@ if __name__ == "__main__":
     #      Summary Statistics       #
     # ----------------------------- #
     print("Step 3 - Computing summary statistics ...")
-
-    # Select young & old participants
-    PROJECT_DIR = f"/well/woolrich/projects/{data_name}"
-    if modality == "eeg":
-        dataset_dir = PROJECT_DIR + "/scho23/src_ec"
-        metadata_dir = PROJECT_DIR + "/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
-        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.npy"))
-        young_idx, old_idx = get_group_idx_lemon(metadata_dir, file_names)
-    if modality == "meg":
-        dataset_dir = PROJECT_DIR + "/winter23/src"
-        metadata_dir = PROJECT_DIR + "/cc700/meta/participants.tsv"
-        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc.npy"))
-        young_idx, old_idx = get_group_idx_camcan(metadata_dir, subj_ids=subj_ids)
-    print("Total {} subjects | Young: {} | Old: {}".format(
-        n_subjects, len(young_idx), len(old_idx),
-    ))
-    print("Young Index: ", young_idx)
-    print("Old Index: ", old_idx)
-
-    # Define group assignments
-    group_assignments = np.zeros((n_subjects,))
-    group_assignments[old_idx] = 1
-    group_assignments[young_idx] = 2
 
     # [1] Compute fractional occupancies
     fo = np.array(modes.fractional_occupancies(btc))
@@ -139,6 +156,10 @@ if __name__ == "__main__":
     metric_full_names = ["Fractional Occupancy", "Mean Lifetimes (ms)", "Mean Intervals (s)", "Swithching Rates"]
     for i, stat in enumerate([fo, lt, intv, sr]):
         print(f"[{metric_names[i]}] Running Max-t Permutation Test ...")
+
+        # Exclude outliers
+        if catch_outlier:
+            stat = stat[not_olr_idx, :]
         
         # Conduct a statistical test
         _, pvalues = group_diff_max_stat_perm(
@@ -155,14 +176,14 @@ if __name__ == "__main__":
         print("\tSignificant states/modes: ", np.arange(1, n_class + 1)[pvalues < 0.05])
 
         # Visualise violin plots
+        group_lbl = ["Young" if val == 2 else "Old" for val in group_assignments]
         plot_grouped_violin(
             data=stat,
-            group_idx=[young_idx, old_idx],
+            group_label=group_lbl,
             method_name=model_type,
             filename=os.path.join(DATA_DIR, f"analysis/{metric_names[i].lower()}.png"),
             ylbl=metric_full_names[i],
             pval=pvalues,
-            detect_outlier=False,
         )
 
     print("Analysis complete.")

@@ -15,7 +15,8 @@ from utils import visualize
 from utils.analysis import get_psd_coh
 from utils.data import (get_group_idx_lemon, 
                         get_group_idx_camcan,
-                        divide_psd_by_age)
+                        divide_psd_by_age,
+                        load_order)
 
 
 if __name__ == "__main__":
@@ -32,20 +33,12 @@ if __name__ == "__main__":
     run_id = argv[3]
     print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
 
-    # Define best runs and their state/mode orders
+    catch_outlier = True
+    outlier_idx = [16, 100, 103, 107]
+
+    # Get state/mode orders for the specified run
     run_dir = f"run{run_id}_{model_type}"
-    order = None
-    if modality == "eeg":
-        if run_dir not in ["run6_hmm", "run2_dynemo"]:
-            raise ValueError("one of the EEG best runs should be selected.")
-        if model_type == "dynemo":
-            order = [1, 0, 2, 3, 7, 4, 6, 5]
-    else:
-        if run_dir not in ["run3_hmm", "run0_dynemo"]:
-            raise ValueError("one of the MEG best runs should be selected.")
-        if model_type == "hmm":
-            order = [6, 1, 3, 2, 5, 0, 4, 7]
-        else: order = [7, 6, 0, 5, 4, 1, 2, 3]
+    order = load_order(run_dir, modality)
 
     # Define training hyperparameters
     Fs = 250 # sampling frequency
@@ -84,6 +77,24 @@ if __name__ == "__main__":
         warnings.warn(f"The length of alphas does not match the number of subjects. n_subjects reset to {len(alpha)}.")
         n_subjects = len(alpha)
 
+    # Select young & old participants
+    PROJECT_DIR = f"/well/woolrich/projects/{data_name}"
+    if modality == "eeg":
+        dataset_dir = PROJECT_DIR + "/scho23/src_ec"
+        metadata_dir = PROJECT_DIR + "/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
+        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.npy"))
+        young_idx, old_idx = get_group_idx_lemon(metadata_dir, file_names)
+    if modality == "meg":
+        dataset_dir = PROJECT_DIR + "/winter23/src"
+        metadata_dir = PROJECT_DIR + "/cc700/meta/participants.tsv"
+        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc.npy"))
+        young_idx, old_idx = get_group_idx_camcan(metadata_dir, subj_ids=subj_ids)
+    print("Total {} subjects | Young: {} | Old: {}".format(
+          n_subjects, len(young_idx), len(old_idx),
+    ))
+    print("Young Index: ", young_idx)
+    print("Old Index: ", old_idx)
+
     # ----------------- [2] ------------------- #
     #      Preprocess inferred parameters       #
     # ----------------------------------------- #
@@ -120,7 +131,7 @@ if __name__ == "__main__":
     # Calculate subject-specific PSDs and coherences
     if model_type == "hmm":
         print("Computing HMM multitaper spectra ...")
-        f, psd, coh, w, gpsd, gcoh = get_psd_coh(
+        f, psd, coh, w = get_psd_coh(
             ts, btc, Fs,
             calc_type="mtp",
             save_dir=DATA_DIR,
@@ -128,17 +139,45 @@ if __name__ == "__main__":
         )
     if model_type == "dynemo":
         print("Computing DyNeMo glm spectra ...")
-        f, psd, coh, w, gpsd, gcoh = get_psd_coh(
+        f, psd, coh, w = get_psd_coh(
             ts, alpha, Fs,
             calc_type="glm",
             save_dir=DATA_DIR,
             n_jobs=n_jobs,
         )
 
+    # Exclude specified outliers
+    if catch_outlier:
+        print("Excluding subject outliers ...\n"
+              "\tOutlier indices: ", outlier_idx)
+        not_olr_idx = np.setdiff1d(np.arange(n_subjects), outlier_idx)
+        ts = [ts[idx] for idx in not_olr_idx]
+        btc = [btc[idx] for idx in not_olr_idx]
+        psd = psd[not_olr_idx]
+        coh = coh[not_olr_idx]
+        print(f"\tPSD shape: {psd.shape} | Coherence shape: {coh.shape}")
+        # Recalculate weights
+        n_samples = [d.shape[0] for d in ts]
+        w = np.array(n_samples) / np.sum(n_samples)
+        # Reassign group indices
+        file_names = [file_names[idx] for idx in not_olr_idx]
+        if modality == "eeg":
+            young_idx, old_idx = get_group_idx_lemon(metadata_dir, file_names)
+        if modality == "meg":
+            young_idx, old_idx = get_group_idx_camcan(metadata_dir, subj_ids=subj_ids)
+        n_subjects -= len(outlier_idx)
+        print("\tTotal {} subjects | Young: {} | Old: {}".format(
+            n_subjects, len(young_idx), len(old_idx),
+        ))
+
     # ---------------- [4] ----------------- #
     #      Power and connectivity maps       #
     # -------------------------------------- #
     print("Step 4 - Computing power and connectivity maps (wide-band; 1-45 Hz) ...")
+
+    # Compute group-level PSDs and coherences (average across subjects)
+    gpsd = np.average(psd, axis=0, weights=w)
+    gcoh = np.average(coh, axis=0, weights=w)
 
     # Get fractional occupancies to be used as weights
     fo = modes.fractional_occupancies(btc)
@@ -196,24 +235,6 @@ if __name__ == "__main__":
     #      Between-group Differences       #
     # ------------------------------------ #
     print("Step 5 - Computing between-group differences in power maps (wide-band; 1-45 Hz) ...")
-
-    # Select young & old participants
-    PROJECT_DIR = f"/well/woolrich/projects/{data_name}"
-    if modality == "eeg":
-        dataset_dir = PROJECT_DIR + "/scho23/src_ec"
-        metadata_dir = PROJECT_DIR + "/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
-        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.npy"))
-        young_idx, old_idx = get_group_idx_lemon(metadata_dir, file_names)
-    if modality == "meg":
-        dataset_dir = PROJECT_DIR + "/winter23/src"
-        metadata_dir = PROJECT_DIR + "/cc700/meta/participants.tsv"
-        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc.npy"))
-        young_idx, old_idx = get_group_idx_camcan(metadata_dir, subj_ids=subj_ids)
-    print("Total {} subjects | Young: {} | Old: {}".format(
-        n_subjects, len(young_idx), len(old_idx),
-    ))
-    print("Young Index: ", young_idx)
-    print("Old Index: ", old_idx)
 
     # Get PSDs and weights for each age group
     psd_young, psd_old, w_young, w_old = divide_psd_by_age(psd, ts, group_idx=[young_idx, old_idx])
