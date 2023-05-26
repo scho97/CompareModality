@@ -4,7 +4,6 @@
 
 import os
 import pickle
-import numpy as np
 from osl_dynamics import analysis
 
 def get_psd_coh(dataset, alpha, Fs, calc_type, save_dir, n_jobs=1):
@@ -41,10 +40,6 @@ def get_psd_coh(dataset, alpha, Fs, calc_type, save_dir, n_jobs=1):
         n_channels, n_freqs).
     w : np.ndarray
         Weights for each subject-specific PSD. Shape is (n_subjects,).
-    gpsd : np.ndarray
-        Group-averaged PSD, weighted by `w`.
-    gcoh : np.ndarray
-        Group-averaged coherences, weighted by `w`.
     """
 
     # Set path for saving the outputs
@@ -88,24 +83,18 @@ def get_psd_coh(dataset, alpha, Fs, calc_type, save_dir, n_jobs=1):
         # dim (psd): n_subjects x n_modes x n_channels x n_freqs
         # dim (coh): n_subjects x n_modes x n_channels x n_channels x n_freqs
 
-    # Group-level PSDs and coherences (average across subjects)
-    gpsd = np.average(psd, axis=0, weights=w)
-    gcoh = np.average(coh, axis=0, weights=w)
-
     # Save outputs
     outputs = {
         "f": f,
         "psd": psd,
         "coh": coh,
         "w": w,
-        "gpsd": gpsd,
-        "gcoh": gcoh,
     }
     with open(filename, "wb") as output_path:
         pickle.dump(outputs, output_path)
     output_path.close()
 
-    return (f, psd, coh, w, gpsd, gcoh)
+    return (f, psd, coh, w)
 
 def _load_psd_coh(filename):
     """Loads PSD and coherence data that were generated with `get_psd_coh()`.
@@ -128,10 +117,6 @@ def _load_psd_coh(filename):
         n_channels, n_freqs).
     w : np.ndarray
         Weights for each subject-specific PSD. Shape is (n_subjects,).
-    gpsd : np.ndarray
-        Group-averaged PSD, weighted by `w`.
-    gcoh : np.ndarray
-        Group-averaged coherences, weighted by `w`.
     """
 
     # Load saved data
@@ -144,7 +129,5 @@ def _load_psd_coh(filename):
     psd = data["psd"]
     coh = data["coh"]
     w = data["w"]
-    gpsd = data["gpsd"]
-    gcoh = data["gcoh"]
 
-    return (f, psd, coh, w, gpsd, gcoh)
+    return (f, psd, coh, w)
