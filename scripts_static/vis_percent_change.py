@@ -6,14 +6,9 @@
 import os
 import pickle
 import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib
+import glmtools as glm
 import matplotlib.pyplot as plt
 from sys import argv
-from utils import (get_mean_error,
-                   stat_ind_two_samples,
-                   categrozie_pvalue)
 
 
 if __name__ == "__main__":
@@ -49,101 +44,101 @@ if __name__ == "__main__":
     else:
         freqs = eeg_data["freqs"]
 
-    # Compute group-averaged PSDs
-    def group_average_data(data, weights):
-        avg_data = []
-        for i, d in enumerate(data):
-            avg_data.append(np.average(d, axis=0, weights=weights[i]))
-        return (data for data in avg_data)
+    # Compute parcel-averaged PSDs
+    eeg_psd = np.concatenate((eeg_psd_y, eeg_psd_o), axis=0)
+    meg_psd = np.concatenate((meg_psd_y, meg_psd_o), axis=0)
+    eeg_ppsd = np.mean(eeg_psd, axis=1)
+    meg_ppsd = np.mean(meg_psd, axis=1)
+    # dim: (n_subjects, n_freqs)
+
+    # Create condition vector
+    conds = np.concatenate((
+        np.repeat((1,), len(eeg_psd_y)),
+        np.repeat((2,), len(eeg_psd_o)),
+    ))
+
+    # Compute COPEs and VARCOPEs
+    def compute_copes_and_varcopes(input_data, assignments):
+        # Create GLM Dataset
+        dataset = glm.data.TrialGLMData(
+            data=input_data,
+            category_list=assignments,
+            dim_labels=['Subjects', 'Frequencies'],
+        )
+        data = dataset.data
+
+        # Create design matrix
+        DC = glm.design.DesignConfig()
+        DC.add_regressor(name='A', rtype='Categorical', codes=1)
+        DC.add_regressor(name='B', rtype='Categorical', codes=2)
+        DC.add_contrast(name='GroupDiff', values=[-1, 1]) # Old - Young
+        des = DC.design_from_datainfo(dataset.info)
+        design_matrix = des.design_matrix
+
+        # Fit model
+        model = glm.fit.OLSModel(des, dataset)
+        betas = np.squeeze(model.betas)
+        copes = np.squeeze(model.copes)
+        varcopes = np.squeeze(model.varcopes)
+
+        return (betas, copes, varcopes, data, design_matrix)
+
+    eeg_glm_fit = compute_copes_and_varcopes(eeg_ppsd, conds)
+    meg_glm_fit = compute_copes_and_varcopes(meg_ppsd, conds)
+
+    # Compute percentage change and its variance
+    def compute_percent_change(stats):
+        # Unpack input data
+        betas, copes, _, data, design_matrix = stats
+        n_features = betas.shape[1]
+
+        # Calculate percentage change
+        pc = (copes / betas[0]) * 100
+
+        # Compute residual dot products
+        resid = glm.fit._get_residuals(design_matrix, betas, data)
+        resid_dots = np.einsum('ij,ji->i', resid.T, resid)
+        dof_error = data.shape[0] - np.linalg.matrix_rank(design_matrix)
+        V = resid_dots / dof_error
+
+        # Compute residue forming matrix
+        residue_forming_matrix = np.linalg.pinv(design_matrix.T.dot(design_matrix))
+
+        # Compute variance of percentage changes
+        var = []
+        for n in range(n_features):
+            gradient_h = np.array([[1 / betas[0, n]], [-betas[1, n] / betas[0, n]]])
+            val = np.linalg.multi_dot([
+                gradient_h.T,
+                residue_forming_matrix,
+                gradient_h,
+            ]) * V[n]
+            var.append(np.squeeze(val))
+        se = [np.sqrt(v) * 100 for v in var] # standard error of precentage change
+
+        return pc, se
     
-    eeg_gpsd_y, eeg_gpsd_o = group_average_data(
-        data=[eeg_psd_y, eeg_psd_o],
-        weights=[eeg_weights_y, eeg_weights_o],
-    )
+    eeg_pc, eeg_se = compute_percent_change(eeg_glm_fit)
+    meg_pc, meg_se = compute_percent_change(meg_glm_fit)
 
-    meg_gpsd_y, meg_gpsd_o = group_average_data(
-        data=[meg_psd_y, meg_psd_o],
-        weights=[meg_weights_y, meg_weights_o],
-    )
-
-    # Calculate percentage change between groups
-    eeg_pc = (eeg_gpsd_o - eeg_gpsd_y) / eeg_gpsd_y
-    meg_pc = (meg_gpsd_o - meg_gpsd_y) / meg_gpsd_y
-    eeg_pc *= 100
-    meg_pc *= 100
-    print(f"Maximum |%| change in EEG: ", np.max(np.abs(eeg_pc)))
-    print(f"Maximum |%| change in MEG: ", np.max(np.abs(meg_pc)))
-
-    # Get moments of percentage changes
-    eeg_pc_mean, eeg_pc_sde = get_mean_error(eeg_pc)
-    meg_pc_mean, meg_pc_sde = get_mean_error(meg_pc)
-    
-    # Test statistical difference of percent changes between modalities
-    eeg_pc_flat = eeg_pc.flatten()
-    meg_pc_flat = meg_pc.flatten()
-    stat, pval = stat_ind_two_samples(
-        eeg_pc_flat,
-        meg_pc_flat,
-        bonferroni_ntest=None,
-    )
-    pval_lbl = categrozie_pvalue(pval)
-
-    # Set visualization parameters
+    # Plot effect sizes
     cmap = ["#5f4b8bff", "#e69a8dff"] # set colors
 
-    # Plot percentage changes over frequencies
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
-    ax.hlines(0, freqs[0], freqs[-1], colors='k', lw=2, linestyles='dotted', alpha=0.5) # baseline
-    ax.plot(freqs, eeg_pc_mean, c=cmap[0], lw=2, label="EEG")
-    ax.fill_between(freqs, eeg_pc_mean - eeg_pc_sde, eeg_pc_mean + eeg_pc_sde, facecolor='k', alpha=0.15)
-    ax.plot(freqs, meg_pc_mean, c=cmap[1], lw=2, label="MEG")
-    ax.fill_between(freqs, meg_pc_mean - meg_pc_sde, meg_pc_mean + meg_pc_sde, facecolor='k', alpha=0.15)
+    ax.hlines(0, freqs[0], freqs[-1], colors="k", lw=2, linestyles="dotted", alpha=0.5) # baseline
+    ax.plot(freqs, eeg_pc, c=cmap[0], lw=2, label="EEG")
+    ax.fill_between(freqs, eeg_pc - eeg_se, eeg_pc + eeg_se, facecolor="k", alpha=0.15)
+    ax.plot(freqs, meg_pc, c=cmap[1], lw=2, label="MEG")
+    ax.fill_between(freqs, meg_pc - meg_se, meg_pc + meg_se, facecolor="k", alpha=0.15)
     ax.set_xlabel("Frequency (Hz)", fontsize=14)
-    ax.set_ylabel("Percentage Change (%)", fontsize=14)
+    ax.set_ylabel("Percent Change (%)", fontsize=14)
     ax.spines[['top', 'right']].set_visible(False)
     ax.spines[['bottom', 'left']].set_linewidth(2)
     ax.yaxis.set_major_locator(plt.MaxNLocator(5))
-    ax.tick_params(labelsize=14, width=2)
+    ax.tick_params(width=2, labelsize=14)
     ax.legend(loc="lower right", fontsize=12)
     plt.tight_layout()
     fig.savefig(os.path.join(SAVE_DIR, f"percent_change_{data_space}.png"))
-    plt.close(fig)
-
-    # Plot percentage changes of each modality
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(3.5, 4))
-    sns.set_style("white")
-    modality_lbl = ["EEG"] * len(eeg_pc_flat) + ["MEG"] * len(meg_pc_flat)
-    df = pd.DataFrame(data={
-        "pc": np.concatenate((eeg_pc_flat, meg_pc_flat)),
-        "mod": modality_lbl,
-    })
-    vp = sns.violinplot(
-        data=df, x="mod", y="pc",
-        palette=cmap, inner='box', ax=ax,
-    )
-    vmin, vmax = [], []
-    for collection in vp.collections:
-        if isinstance(collection, matplotlib.collections.PolyCollection):
-            vmin.append(np.min(collection.get_paths()[0].vertices[:, 1]))
-            vmax.append(np.max(collection.get_paths()[0].vertices[:, 1]))
-    vmin, vmax = np.min(vmin), np.max(vmax)
-    if pval_lbl != "n.s.":
-        hl = (vmax - vmin) * 0.03
-        ax.hlines(y=vmax + hl, xmin=vp.get_xticks()[0], xmax=vp.get_xticks()[1], colors="k", lw=3, alpha=0.75)
-    ht = (vmax - vmin) * 0.045
-    if pval_lbl == "n.s.":
-        ht = (vmax - vmin) * 0.085
-    ax.text(np.mean(vp.get_xticks()), vmax + ht, pval_lbl, ha="center", va="center", color='k', fontsize=25, fontweight="bold")
-    for axis in ["top", "right"]:
-        ax.spines[axis].set_visible(False)
-    for axis in ["bottom", "left"]:
-        ax.spines[axis].set_linewidth(2)
-    ax.tick_params(labelsize=14, width=2)
-    ax.set_xlim([-0.7, 1.7])
-    ax.set_xlabel("Modality",fontsize=14)
-    ax.set_ylabel("Percentage Change (%)", fontsize=14)
-    plt.tight_layout()
-    fig.savefig(os.path.join(SAVE_DIR, f"percent_change_stat_{data_space}.png"))
     plt.close(fig)
 
     print("Visualization complete.")
