@@ -2,6 +2,7 @@
 
 """
 
+import warnings
 import mne
 import numpy as np
 from scipy import stats
@@ -119,7 +120,7 @@ def _check_stat_assumption(samples1, samples2, ks_alpha=0.05, ev_alpha=0.05):
 
     return nm_flag, ev_flag
 
-def stat_ind_two_samples(samples1, samples2, bonferroni_ntest=None):
+def stat_ind_two_samples(samples1, samples2, bonferroni_ntest=None, test=None):
     """Performs a statistical test comparing two independent samples.
 
     Parameters
@@ -130,6 +131,9 @@ def stat_ind_two_samples(samples1, samples2, bonferroni_ntest=None):
         Array of sample data (group 2). Shape must be (n_samples,).
     bonferroni_ntest : int
         Number of tests to be used for Bonferroni correction. Default to None.
+    test : str
+        Statistical test to use. Defaults to None, which automatically selects
+        the test after checking the assumptions.
 
     Returns
     -------
@@ -142,7 +146,15 @@ def stat_ind_two_samples(samples1, samples2, bonferroni_ntest=None):
     """
 
     # Check normality and equal variance assumption
-    nm_flag, ev_flag = _check_stat_assumption(samples1, samples2)
+    if test is None:
+        nm_flag, ev_flag = _check_stat_assumption(samples1, samples2)
+    else:
+        if test == "ttest":
+            nm_flag, ev_flag = True, True
+        elif test == "welch":
+            nm_flag, ev_flag = True, False
+        elif test == "wilcoxon":
+            nm_flag, ev_flag = False, True
 
     # Compare two independent groups
     print("*** Comparing Two Independent Groups ***")
@@ -154,6 +166,8 @@ def stat_ind_two_samples(samples1, samples2, bonferroni_ntest=None):
         stat, pval = stats.ttest_ind(samples1, samples2, equal_var=False)
     if not nm_flag:
         print("\tConducting the Wilcoxon Rank Sum test ...")
+        if not ev_flag:
+            warnings.warn("Caution: Distributions have unequal variances.", UserWarning)
         stat, pval = stats.ranksums(samples1, samples2)
     print(f"\tResult: statistic={stat} | p-value={pval}")
 
