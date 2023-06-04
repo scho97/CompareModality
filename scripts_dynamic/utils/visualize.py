@@ -50,11 +50,14 @@ def plot_free_energy(data, modality, filename):
         vmin -= (vmax - vmin) * 0.1
         vmax += (vmax - vmin) * 0.1
         ax[i].plot(x, dat, marker='o', linestyle='--', lw=2, markersize=10, color=plt.cm.Set2(i))
-        ax[i].set_xticks(x)
-        ax[i].set_xticklabels(x)
         ax[i].set_ylim([vmin, vmax])
-        yticks = np.linspace(np.round(vmin), np.round(vmax), 3)
-        ax[i].set_yticks(yticks)
+        yticks = np.round(np.linspace(vmin, vmax, 3), 2)
+        ax[i].set(
+            xticks=x,
+            yticks=yticks,
+            xticklabels=x,
+            yticklabels=np.char.mod("%.2f", yticks),
+        )
     ax[0].set_title("HMM")
     ax[1].set_title("DyNeMo")
     ax[0].tick_params(axis='x', bottom=False, labelbottom=False)
