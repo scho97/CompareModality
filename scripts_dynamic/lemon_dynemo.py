@@ -4,6 +4,7 @@
 
 # Set up dependencies
 import os
+import glob
 import pickle
 import numpy as np
 from sys import argv
@@ -62,15 +63,18 @@ if __name__ == "__main__":
         n_epochs=60,
     )
 
-    # ------------- [2] -------------- #
-    #      Load training dataset       #
-    # -------------------------------- #
-    print("Step 2 - Loading training dataset ...")
+    # --------------- [2] --------------- #
+    #      Prepare training dataset       #
+    # ----------------------------------- #
+    print("Step 2 - Preparing training dataset ...")
 
-    dataset_dir = "/well/woolrich/projects/lemon/scho23/prepared"
-    training_data = data.Data(dataset_dir, store_dir=tmp_dir)
-    # NOTE: Source reconstructed, eye-closed data were prepared with
-    # time-delay embedding (lag=15) and PCA (n_pca_components=80).
+    # Load data
+    dataset_dir = "/well/woolrich/projects/lemon/scho23/src_ec"
+    file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.npy"))
+
+    # Prepare the data for training
+    training_data = data.Data(file_names, store_dir=tmp_dir)
+    training_data.prepare(n_embeddings=15, n_pca_components=config.n_channels)
 
     # ------------ [3] ------------- #
     #      Build the HMM model       #
