@@ -8,7 +8,7 @@ import pickle
 import numpy as np
 from sys import argv
 from osl_dynamics.inference import modes
-from utils import plot_correlations
+from utils import plot_correlations, load_order
 
 
 if __name__ == "__main__":
@@ -59,13 +59,7 @@ if __name__ == "__main__":
     #       For DyNeMo, this would be the mixing coefficients.
 
     # Reorder reference alphas
-    ref_order = None
-    if (modality == "eeg") & (model_type == "dynemo"):
-        ref_order = [1, 0, 2, 3, 7, 4, 6, 5]
-    if modality == "meg":
-        if model_type == "hmm":
-            ref_order = [6, 1, 3, 2, 5, 0, 4, 7]
-        else: ref_order = [7, 6, 0, 5, 4, 1, 2, 3]
+    ref_order = load_order(ref_dir, modality)
     if ref_order is not None:
         print("Reordering reference state/mode time courses ...")
         ref_alpha = [alpha[:, ref_order] for alpha in ref_alpha]
