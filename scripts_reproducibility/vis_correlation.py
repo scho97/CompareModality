@@ -45,10 +45,12 @@ if __name__ == "__main__":
     # Plot correlations across modality
     plot_correlations(time_course["eeg"]["hmm"],
                       time_course["meg"]["hmm"],
-                      filename=os.path.join(SAVE_DIR, "corr_eeg_meg_hmm.png"))
+                      filename=os.path.join(SAVE_DIR, "corr_eeg_meg_hmm.png"),
+                      colormap="RdGy_r")
     plot_correlations(time_course["eeg"]["dynemo"],
                       time_course["meg"]["dynemo"],
-                      filename=os.path.join(SAVE_DIR, "corr_eeg_meg_dynemo.png"))
+                      filename=os.path.join(SAVE_DIR, "corr_eeg_meg_dynemo.png"),
+                      colormap="RdGy_r")
 
     # Plot correlations across model within modality
     plot_correlations(time_course["eeg"]["hmm"],

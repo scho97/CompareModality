@@ -8,7 +8,7 @@ from matplotlib.transforms import Bbox
 from osl_dynamics.utils import plotting
 
 
-def plot_correlations(data1, data2, filename):
+def plot_correlations(data1, data2, filename, colormap="coolwarm"):
     """Computes correlation between the input data and plots 
     their correlation matrix.
 
@@ -22,6 +22,8 @@ def plot_correlations(data1, data2, filename):
         Shape can be (n_samples, n_modes) or (n_subjects, n_samples, n_modes).
     filename : str
         Path for saving the figure.
+    colormap : str
+        Type of a colormap to use. Defaults to "coolwarm".
     """
 
     # Validation
@@ -53,7 +55,7 @@ def plot_correlations(data1, data2, filename):
     corr = np.corrcoef(data1, data2, rowvar=False)[n_modes1:, :n_modes2]
 
     # Plot correlation matrix
-    fig, _ = plotting.plot_matrices(corr, cmap="coolwarm")
+    fig, _ = plotting.plot_matrices(corr, cmap=colormap)
     ax = fig.axes[0] # to remain compatible with `osl-dynamics.plotting`
     im = ax.findobj()[0]
     vmax = np.max(np.abs(corr))
