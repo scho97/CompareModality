@@ -99,6 +99,7 @@ if __name__ == "__main__":
     # Reorder states or modes if necessary
     if order is not None:
         print(f"Reordering {modality.upper()} state/mode time courses ...")
+        print(f"\tOrder: {order}")
         alpha = [a[:, order] for a in alpha] # dim: n_subjects x n_samples x n_modes
 
     # Get HMM state time courses
