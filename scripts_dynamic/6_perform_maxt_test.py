@@ -188,6 +188,9 @@ if __name__ == "__main__":
 
    # Define the number of tests for Bonferroni correction
    bonferroni_ntest = n_class
+
+   # Preallocate output data
+   map_statistics = {"power": [], "power_dynamic": [], "connectivity": []}
    
    # Max-t permutation tests on the power maps
    print("[Power] Running Max-t Permutation Test ...")
@@ -211,6 +214,8 @@ if __name__ == "__main__":
             for lbl in ["unthr", "thr"]
          ]
       )
+      # Store p-values
+      map_statistics["power"].append(pvalues)
 
    print("[Power (mean-subtracted)] Running Max-t Permutation Test ...")
    
@@ -233,6 +238,8 @@ if __name__ == "__main__":
             for lbl in ["unthr", "thr"]
          ]
       )
+      # Store p-values
+      map_statistics["power_dynamic"].append(pvalues)
 
    # Max-t permutation tests on the connectivity maps
    print("[Connectivity] Running Max-t Permutation Test ...")
@@ -262,5 +269,15 @@ if __name__ == "__main__":
             for lbl in ["unthr", "thr"]
          ]
       )
+      # Store p-values
+      pvalues_map = np.zeros((n_parcels, n_parcels))
+      pvalues_map[i, j] = pvalues
+      pvalues_map += pvalues_map.T
+      map_statistics["connectivity"].append(pvalues_map)
+
+   # Save statistical test results
+   with open(os.path.join(DATA_DIR, f"model/results/map_statistics.pkl"), "wb") as output_path:
+      pickle.dump(map_statistics, output_path)
+   output_path.close()
 
    print("Analysis complete.")
