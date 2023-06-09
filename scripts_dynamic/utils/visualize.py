@@ -825,7 +825,7 @@ def _get_lim(data, scale=0.1):
     return minimum, maximum
 
 def plot_thresholded_map(tstats, pvalues, map_type, mask_file, parcellation_file, filenames):
-   """Get lower and upper limits of the input data.
+   """Plot a thresholded power or functional connectivity map.
 
     Parameters
     ----------
