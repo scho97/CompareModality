@@ -17,7 +17,7 @@ from osl_dynamics.utils.parcellation import Parcellation
 from nilearn.plotting import plot_markers, plot_glass_brain
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 
-def plot_group_power_map(power_map, filename, mask_file, parcellation_file):
+def plot_group_power_map(power_map, filename, mask_file, parcellation_file, plot_kwargs=None):
     """Plot group-level power maps.
 
     Parameters
@@ -30,12 +30,15 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file):
         Path to a masking file.
     parcellation_file : str
         Path to a brain parcellation file.
+    plot_kwargs : dict
+        Keyword arguments to pass to `nilearn.plotting.plot_img_on_surf`.
     """
     
     figures, axes = power.save(
         power_map=power_map,
         mask_file=mask_file,
         parcellation_file=parcellation_file,
+        plot_kwargs=plot_kwargs,
     )
     fig = figures[0]
     cbar_ax = axes[0][-1]
