@@ -12,7 +12,7 @@ from sys import argv
 
 
 if __name__ == "__main__":
-    # Set hyperparameters
+    # Set up hyperparameters
     if len(argv) != 2:
         print("Need to pass one argument: data space (e.g., python script.py sensor)")
     data_space = argv[1]
@@ -86,6 +86,11 @@ if __name__ == "__main__":
     eeg_glm_fit = compute_copes_and_varcopes(eeg_ppsd, conds)
     meg_glm_fit = compute_copes_and_varcopes(meg_ppsd, conds)
 
+    eeg_copes, eeg_varcopes = eeg_glm_fit[1], eeg_glm_fit[2]
+    meg_copes, meg_varcopes = meg_glm_fit[1], meg_glm_fit[2]
+    eeg_secopes = np.sqrt(eeg_varcopes)
+    meg_secopes = np.sqrt(meg_varcopes)
+
     # Compute percentage change and its variance
     def compute_percent_change(stats):
         # Unpack input data
@@ -121,9 +126,28 @@ if __name__ == "__main__":
     eeg_pc, eeg_se = compute_percent_change(eeg_glm_fit)
     meg_pc, meg_se = compute_percent_change(meg_glm_fit)
 
-    # Plot effect sizes
-    cmap = ["#5f4b8bff", "#e69a8dff"] # set colors
+    # Set visualization parameters
+    cmap = ["#5f4b8bff", "#e69a8dff"]
 
+    # Plot effect sizes: mean group difference
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+    ax.hlines(0, freqs[0], freqs[-1], colors="k", lw=2, linestyles="dotted", alpha=0.5) # baseline
+    ax.plot(freqs, eeg_copes, c=cmap[0], lw=2, label="EEG")
+    ax.fill_between(freqs, eeg_copes - eeg_secopes, eeg_copes + eeg_secopes, facecolor="k", alpha=0.15)
+    ax.plot(freqs, meg_copes, c=cmap[1], lw=2, label="MEG")
+    ax.fill_between(freqs, meg_copes - meg_secopes, meg_copes + meg_secopes, facecolor="k", alpha=0.15)
+    ax.set_xlabel("Frequency (Hz)", fontsize=14)
+    ax.set_ylabel("Mean Group Difference (a.u.)", fontsize=14)
+    ax.spines[['top', 'right']].set_visible(False)
+    ax.spines[['bottom', 'left']].set_linewidth(2)
+    ax.yaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.tick_params(width=2, labelsize=14)
+    ax.legend(loc="lower right", fontsize=12)
+    plt.tight_layout()
+    fig.savefig(os.path.join(SAVE_DIR, f"mean_group_diff_{data_space}.png"))
+    plt.close(fig)
+
+    # Plot effect sizes: percentage change
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
     ax.hlines(0, freqs[0], freqs[-1], colors="k", lw=2, linestyles="dotted", alpha=0.5) # baseline
     ax.plot(freqs, eeg_pc, c=cmap[0], lw=2, label="EEG")
