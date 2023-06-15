@@ -33,7 +33,7 @@ if __name__ == "__main__":
     psd_o = data["old_psd"]
     psds = np.concatenate((psd_y, psd_o), axis=0)
     n_subjects = psds.shape[0]
-    n_young = data["n_young"]
+    n_young = psd_y.shape[0]
 
     print("PSD shape: ", psds.shape)
     print("PSD loaded. Total {} subjects | Young: {} | Old: {}".format(n_subjects, psd_y.shape[0], psd_o.shape[0]))
