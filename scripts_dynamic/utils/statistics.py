@@ -268,7 +268,10 @@ def group_diff_cluster_perm_2d(
         obs = np.squeeze(model.copes)
 
     # Run cluster permutations over channels and frequencies
-    cft = 3 # cluster forming threshold
+    if metric == "tstats":
+        cft = 3 # cluster forming threshold
+    if metric == "copes":
+        cft = 0.001
     perm = glm.permutations.ClusterPermutation(
         design=design,
         data=data,
