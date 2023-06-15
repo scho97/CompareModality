@@ -41,19 +41,25 @@ if __name__ == "__main__":
     gpower_o = np.mean(power_o, axis=0)
     gpower_diff = gpower_o - gpower_y
 
-    # Plot group-level power maps
+    # Set visualization parameters
     matplotlib.rcParams['font.size'] = 12
+    hmax = np.max([gpower_y, gpower_o])
+    hmax *= 1.5 # add some margin to prevent oversaturation
+
+    # Plot group-level power maps
     plot_group_power_map(
         gpower_y,
         filename=os.path.join(SAVE_DIR, "power_map_y.png"),
         mask_file=mask_file,
         parcellation_file=parcellation_file,
+        plot_kwargs={"vmax": hmax},
     )
     plot_group_power_map(
         gpower_o,
         filename=os.path.join(SAVE_DIR, "power_map_o.png"),
         mask_file=mask_file,
         parcellation_file=parcellation_file,
+        plot_kwargs={"vmax": hmax}
     )
     plot_group_power_map(
         gpower_diff,
