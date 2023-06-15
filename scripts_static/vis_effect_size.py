@@ -142,6 +142,8 @@ if __name__ == "__main__":
     ax.spines[['bottom', 'left']].set_linewidth(2)
     ax.yaxis.set_major_locator(plt.MaxNLocator(5))
     ax.tick_params(width=2, labelsize=14)
+    ax.ticklabel_format(style='scientific', axis='y', scilimits=(-1, 6))
+    ax.yaxis.offsetText.set_fontsize(14)
     ax.legend(loc="lower right", fontsize=12)
     plt.tight_layout()
     fig.savefig(os.path.join(SAVE_DIR, f"mean_group_diff_{data_space}.png"))
