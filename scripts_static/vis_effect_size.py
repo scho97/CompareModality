@@ -1,4 +1,4 @@
-"""Visualize percentage change in power spectra between age groups
+"""Visualize effect sizes of power spectra between age groups
 
 """
 
