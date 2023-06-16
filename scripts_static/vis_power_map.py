@@ -53,6 +53,8 @@ if __name__ == "__main__":
         filename=os.path.join(SAVE_DIR, "power_map_y.png"),
         mask_file=mask_file,
         parcellation_file=parcellation_file,
+        data_space=data_space,
+        modality=modality,
         plot_kwargs={"vmax": hmax},
     )
     plot_group_power_map(
@@ -60,6 +62,8 @@ if __name__ == "__main__":
         filename=os.path.join(SAVE_DIR, "power_map_o.png"),
         mask_file=mask_file,
         parcellation_file=parcellation_file,
+        data_space=data_space,
+        modality=modality,
         plot_kwargs={"vmax": hmax}
     )
     plot_group_power_map(
@@ -67,6 +71,8 @@ if __name__ == "__main__":
         filename=os.path.join(SAVE_DIR, "power_map_diff.png"),
         mask_file=mask_file,
         parcellation_file=parcellation_file,
+        data_space=data_space,
+        modality=modality,
     )
 
     print("Visualization complete.")

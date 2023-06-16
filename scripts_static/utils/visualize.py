@@ -17,35 +17,85 @@ from osl_dynamics.utils.parcellation import Parcellation
 from nilearn.plotting import plot_markers, plot_glass_brain
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 
-def plot_group_power_map(power_map, filename, mask_file, parcellation_file, plot_kwargs=None):
-    """Plot group-level power maps.
+def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data_space="source", modality=None, plot_kwargs=None):
+    """Plot group-level power maps. For sensor data, a topographical map
+    (using magnetometer channels) is saved. For source data, a surface
+    map is saved.
 
     Parameters
     ----------
     power_map : np.ndarray
-        Group-level power map. Shape must be (n_channels, n_freqs).
+        Group-level power map. Shape must be (n_channels,).
     filename : str
         File name to be used when saving a figure object.
     mask_file : str
         Path to a masking file.
     parcellation_file : str
         Path to a brain parcellation file.
+    data_space : str
+        Data space of the power map. Should be either "sensor" or "source".
+        Defaults to "source".
+    modality : str
+        Modality of the input data. Should be either "eeg" or "meg".
+        Defaults to None, but required for sensor data.
     plot_kwargs : dict
         Keyword arguments to pass to `nilearn.plotting.plot_img_on_surf`.
+        Currently, only used when data_space is "source".
     """
     
-    figures, axes = power.save(
-        power_map=power_map,
-        mask_file=mask_file,
-        parcellation_file=parcellation_file,
-        plot_kwargs=plot_kwargs,
-    )
-    fig = figures[0]
-    cbar_ax = axes[0][-1]
-    cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
-    fig.set_size_inches(5, 6)
-    fig.savefig(filename)
-    plt.close(fig)
+    # Validation
+    if data_space not in ["sensor", "source"]:
+        raise ValueError("data_space should be 'sensor' or 'source'.")
+    
+    if data_space == "sensor":
+        if modality is None:
+            raise ValueError("modality has to be specified for sensor data.")
+    
+    # Plot topographic map
+    if data_space == "sensor":
+        # Load single subject data for reference
+        eeg_flag, meg_flag = False, False
+        if modality == "eeg":
+            reference_file = "/well/woolrich/projects/lemon/scho23/preproc/sub-010005/sub-010005_preproc_raw.fif"
+            eeg_flag = True
+        if modality == "meg":
+            reference_file = "/well/woolrich/projects/camcan/winter23/preproc/mf2pt2_sub-CC110033_ses-rest_task-rest_meg/mf2pt2_sub-CC110033_ses-rest_task-rest_meg_preproc_raw.fif"
+            meg_flag = "mag" # only use magnatometers for plotting a topographic map
+        raw = mne.io.read_raw_fif(reference_file)
+        topo_raw = raw.copy().pick_types(eeg=eeg_flag, meg=meg_flag)
+        # Select magnatometer channels
+        if meg_flag:
+            mag_picks = mne.pick_types(raw.info, meg=meg_flag)
+            power_map = power_map[mag_picks]
+        # Visualize topographic map
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(4, 4.5))
+        im, _ = mne.viz.plot_topomap(
+            power_map,
+            topo_raw.info,
+            axes=ax,
+            cmap="cold_hot",
+            show=False,
+        )
+        cb_ax = fig.add_axes([0.25, 0.11, 0.50, 0.05])
+        cb = plt.colorbar(im, cax=cb_ax, orientation="horizontal")
+        cb.ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
+        fig.savefig(filename)
+        plt.close(fig)
+
+    # Plot sufrace map
+    if data_space == "source":
+        figures, axes = power.save(
+            power_map=power_map,
+            mask_file=mask_file,
+            parcellation_file=parcellation_file,
+            plot_kwargs=plot_kwargs,
+        )
+        fig = figures[0]
+        cbar_ax = axes[0][-1]
+        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
+        fig.set_size_inches(5, 6)
+        fig.savefig(filename)
+        plt.close(fig)
 
     return None
 
