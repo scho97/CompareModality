@@ -16,12 +16,12 @@ if __name__ == "__main__":
     freq_range = [1, 45]
     band_name = "wide"
     verbose = True
-    print(f"[INFO] Modality: {modality.upper()}, Data Space: {data_space}, Frequency Band: {band_name} ({freq_range[0]}-{freq_range[1]} Hz)")
+    print(f"[INFO] Modality: {modality.upper()} | Data Space: {data_space} | Frequency Band: {band_name} ({freq_range[0]}-{freq_range[1]} Hz)")
 
     # Set directories
     BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/static"
     DATA_DIR = os.path.join(BASE_DIR, f"{modality}/{data_space}_psd")
-    SAVE_DIR = os.path.join(BASE_DIR, f"{modality}/power_{band_name}")
+    SAVE_DIR = os.path.join(BASE_DIR, f"{modality}/power_{data_space}_{band_name}")
     os.makedirs(SAVE_DIR, exist_ok=True)
 
     # Load data

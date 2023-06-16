@@ -13,9 +13,10 @@ from utils.visualize import plot_group_power_map
 if __name__ == "__main__":
     # Set hyperparameters
     modality = "meg"
+    data_space = "source"
     freq_range = [1, 45]
     band_name = "wide"
-    print(f"[INFO] Modality: {modality.upper()}, Frequency Band: {band_name} ({freq_range[0]}-{freq_range[1]} Hz)")
+    print(f"[INFO] Modality: {modality.upper()} | Data Space: {data_space} | Frequency Band: {band_name} ({freq_range[0]}-{freq_range[1]} Hz)")
 
     # Set parcellation file paths
     mask_file = "MNI152_T1_8mm_brain.nii.gz"
@@ -25,7 +26,7 @@ if __name__ == "__main__":
 
     # Set directories
     BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/static"
-    DATA_DIR = os.path.join(BASE_DIR, f"{modality}/power_{band_name}")
+    DATA_DIR = os.path.join(BASE_DIR, f"{modality}/power_{data_space}_{band_name}")
     SAVE_DIR = DATA_DIR
 
     # Load data

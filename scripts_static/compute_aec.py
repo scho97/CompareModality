@@ -14,7 +14,7 @@ if __name__ == "__main__":
     data_space = "source"
     frequency_band = [1, 45]
     band_name = "wide"
-    print(f"[INFO] Modality: {modality.upper()}, Data Space: {data_space}, Frequency Band: {band_name} ({frequency_band[0]}-{frequency_band[1]} Hz)")
+    print(f"[INFO] Modality: {modality.upper()} | Data Space: {data_space} | Frequency Band: {band_name} ({frequency_band[0]}-{frequency_band[1]} Hz)")
 
     # Set directory paths
     PROJECT_DIR = "/well/woolrich/projects"
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         dataset_dir = PROJECT_DIR + "/camcan/winter23"
         metadata_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
     BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/static"
-    SAVE_DIR = os.path.join(BASE_DIR, f"{modality}/aec_{band_name}")
+    SAVE_DIR = os.path.join(BASE_DIR, f"{modality}/aec_{data_space}_{band_name}")
     TMP_DIR = os.path.join(SAVE_DIR, "tmp")
     os.makedirs(SAVE_DIR, exist_ok=True)
     os.makedirs(TMP_DIR, exist_ok=True)

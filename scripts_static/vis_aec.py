@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     # Set directories
     BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/static"
-    SAVE_DIR = os.path.join(BASE_DIR, f"{modality}/aec_{band_name}")
+    SAVE_DIR = os.path.join(BASE_DIR, f"{modality}/aec_{data_space}_{band_name}")
 
     # Load data
     with open(os.path.join(SAVE_DIR, "aec.pkl"), "rb") as input_path:
