@@ -190,7 +190,8 @@ if __name__ == "__main__":
    bonferroni_ntest = n_class
 
    # Preallocate output data
-   map_statistics = {"power": [], "power_dynamic": [], "connectivity": []}
+   stat_unit = {"tstats": [], "pvalues": []}
+   map_statistics = {"power": stat_unit, "power_dynamic": stat_unit, "connectivity": stat_unit}
    
    # Max-t permutation tests on the power maps
    print("[Power] Running Max-t Permutation Test ...")
@@ -214,8 +215,9 @@ if __name__ == "__main__":
             for lbl in ["unthr", "thr"]
          ]
       )
-      # Store p-values
-      map_statistics["power"].append(pvalues)
+      # Store test statistics
+      map_statistics["power"]["tstats"].append(tstats)
+      map_statistics["power"]["pvalues"].append(pvalues)
 
    print("[Power (mean-subtracted)] Running Max-t Permutation Test ...")
    
@@ -238,8 +240,9 @@ if __name__ == "__main__":
             for lbl in ["unthr", "thr"]
          ]
       )
-      # Store p-values
-      map_statistics["power_dynamic"].append(pvalues)
+      # Store test statistics
+      map_statistics["power_dynamic"]["tstats"].append(tstats)
+      map_statistics["power_dynamic"]["pvalues"].append(pvalues)
 
    # Max-t permutation tests on the connectivity maps
    print("[Connectivity] Running Max-t Permutation Test ...")
@@ -269,11 +272,16 @@ if __name__ == "__main__":
             for lbl in ["unthr", "thr"]
          ]
       )
+      # Store t-statistics
+      tstats_map = np.zeros((n_parcels, n_parcels))
+      tstats_map[i, j] = tstats
+      tstats_map += tstats_map.T
+      map_statistics["connectivity"]["tstats"].append(tstats)
       # Store p-values
       pvalues_map = np.zeros((n_parcels, n_parcels))
       pvalues_map[i, j] = pvalues
       pvalues_map += pvalues_map.T
-      map_statistics["connectivity"].append(pvalues_map)
+      map_statistics["connectivity"]["pvalues"].append(pvalues_map)
 
    # Save statistical test results
    with open(os.path.join(DATA_DIR, f"model/results/map_statistics.pkl"), "wb") as output_path:

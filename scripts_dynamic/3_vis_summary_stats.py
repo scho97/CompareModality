@@ -8,11 +8,11 @@ import numpy as np
 import seaborn as sns
 from sys import argv
 from osl_dynamics.inference import modes
-from osl_dynamics.analysis.statistics import group_diff_max_stat_perm
 from utils.data import (get_dynemo_mtc, 
                         get_group_idx_lemon, 
                         get_group_idx_camcan,
                         load_order)
+from utils.statistics import group_diff_max_stat_perm
 from utils.visualize import plot_grouped_violin
 
 
@@ -150,19 +150,22 @@ if __name__ == "__main__":
 
     sns.set_theme(style="white")
 
+    # Preallocate output data
+    summ_stat_statistics = {"fo": [], "lt": [], "intv": [], "sr": []}
+
     # Perform max-t permutation tests
     bonferroni_ntest = 4 # n_test = n_metrics
-    metric_names = ["FO", "LT", "INTV", "SR"]
+    metric_names = ["fo", "lt", "intv", "sr"]
     metric_full_names = ["Fractional Occupancy", "Mean Lifetimes (ms)", "Mean Intervals (s)", "Swithching Rates"]
     for i, stat in enumerate([fo, lt, intv, sr]):
-        print(f"[{metric_names[i]}] Running Max-t Permutation Test ...")
+        print(f"[{metric_names[i].upper()}] Running Max-t Permutation Test ...")
 
         # Exclude outliers
         if catch_outlier:
             stat = stat[not_olr_idx, :]
         
         # Conduct a statistical test
-        _, pvalues = group_diff_max_stat_perm(
+        _, tstats, pvalues = group_diff_max_stat_perm(
             stat,
             group_assignments,
             n_perm=10000,
@@ -181,9 +184,17 @@ if __name__ == "__main__":
             data=stat,
             group_label=group_lbl,
             method_name=model_type,
-            filename=os.path.join(DATA_DIR, f"analysis/{metric_names[i].lower()}.png"),
+            filename=os.path.join(DATA_DIR, f"analysis/{metric_names[i]}.png"),
             ylbl=metric_full_names[i],
             pval=pvalues,
         )
+
+        # Store test statistics
+        summ_stat_statistics[metric_names[i]].append(tstats)
+
+    # Save statistical test results
+    with open(os.path.join(DATA_DIR, "model/results/summ_stat_statistics.pkl"), "wb") as output_path:
+        pickle.dump(summ_stat_statistics, output_path)
+    output_path.close()
 
     print("Analysis complete.")
