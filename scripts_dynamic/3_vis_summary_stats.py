@@ -151,7 +151,7 @@ if __name__ == "__main__":
     sns.set_theme(style="white")
 
     # Preallocate output data
-    summ_stat_statistics = {"fo": [], "lt": [], "intv": [], "sr": []}
+    summ_stat_statistics = dict()
 
     # Perform max-t permutation tests
     bonferroni_ntest = 4 # n_test = n_metrics
@@ -190,7 +190,10 @@ if __name__ == "__main__":
         )
 
         # Store test statistics
-        summ_stat_statistics[metric_names[i]].append(tstats)
+        summ_stat_statistics[metric_names[i]] = {
+            "tstats": tstats,
+            "pvalues": pvalues,
+        }
 
     # Save statistical test results
     with open(os.path.join(DATA_DIR, "model/results/summ_stat_statistics.pkl"), "wb") as output_path:
