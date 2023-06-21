@@ -276,7 +276,7 @@ if __name__ == "__main__":
       tstats_map = np.zeros((n_parcels, n_parcels))
       tstats_map[i, j] = tstats
       tstats_map += tstats_map.T
-      map_statistics["connectivity"]["tstats"].append(tstats)
+      map_statistics["connectivity"]["tstats"].append(tstats_map)
       # Store p-values
       pvalues_map = np.zeros((n_parcels, n_parcels))
       pvalues_map[i, j] = pvalues
