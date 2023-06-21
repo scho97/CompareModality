@@ -190,8 +190,11 @@ if __name__ == "__main__":
    bonferroni_ntest = n_class
 
    # Preallocate output data
-   stat_unit = {"tstats": [], "pvalues": []}
-   map_statistics = {"power": stat_unit, "power_dynamic": stat_unit, "connectivity": stat_unit}
+   map_statistics = {
+      "power": {"tstats": [], "pvalues": []},
+      "power_dynamic": {"tstats": [], "pvalues": []},
+      "connectivity": {"tstats": [], "pvalues": []},
+   }
    
    # Max-t permutation tests on the power maps
    print("[Power] Running Max-t Permutation Test ...")
