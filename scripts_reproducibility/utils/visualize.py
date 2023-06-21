@@ -335,11 +335,13 @@ def plot_connectivity_map_for_reprod(
                 org_vmin = np.nanmin(conn_map_mode)
                 org_vmax = np.nanmax(conn_map_mode)
                 conn_map_mode = min_max_scale(conn_map_mode)
+        else: vmin, vmax = None, None
         # Plot connectivity map
         plot_kwargs = {"edge_cmap": colormap,
                        "edge_vmin": vmin,
                        "edge_vmax": vmax,
-                       "node_size": 10, "node_color": "black",
+                       "node_size": 10,
+                       "node_color": "black",
                        "colorbar": True,
                        "figure": fig,
                        "axes": ax,}
@@ -354,9 +356,10 @@ def plot_connectivity_map_for_reprod(
             **plot_kwargs,
         )
         # Add manual colorbar
+        cb_ax = fig.get_axes()[-1]
         if not cbar_opt:
-            pos = fig.get_axes()[-1].get_position()
-            fig.get_axes()[-1].remove() # remove original colorbar
+            pos = cb_ax.get_position()
+            cb_ax.remove() # remove original colorbar
             if discrete:
                 norm = matplotlib.colors.BoundaryNorm(boundaries=np.arange(discrete + 2), ncolors=discrete + 1)
             else:
@@ -371,6 +374,8 @@ def plot_connectivity_map_for_reprod(
                 cb.ax.set_yticks(yticks + 0.5, labels=yticks)
             else:
                 cb.ax.set_yticks(np.linspace(org_vmin, org_vmax, 3))
+        else:
+            cb_ax.tick_params(labelsize=14)
         # Save figure
         if n_modes != 1:
             filename = filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{n}")

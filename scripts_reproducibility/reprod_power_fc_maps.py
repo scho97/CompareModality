@@ -8,6 +8,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from sys import argv
+from osl_dynamics.analysis import connectivity
 from utils import (plot_power_map,
                    plot_surfaces,
                    plot_connectivity_map_for_reprod,)
@@ -49,16 +50,22 @@ if __name__ == "__main__":
 
     # Load map statistics
     run_ids = BEST_RUNS[modality][model_type]
-    pval_map, mask_map = [], []
+    tstat_map, pval_map, mask_map = [], [], []
     for n, id in enumerate(run_ids):
         run_dir = f"run{run_ids[n]}_{model_type}"
         with open(os.path.join(DATA_DIR, f"{run_dir}/model/results/map_statistics.pkl"), "rb") as input_path:
             map_statistics = pickle.load(input_path)
-        pvalues = (
-            np.array(map_statistics["power"]), # dim: (n_states, n_parcels)
-            np.array(map_statistics["power_dynamic"]), # dim: (n_states, n_parcels)
-            np.array(map_statistics["connectivity"]), # dim: (n_states, n_parcels, n_parcels)
+        tstats = (
+            np.array(map_statistics["power"]["tstats"]), # dim: (n_states, n_parcels)
+            np.array(map_statistics["power_dynamic"]["tstats"]), # dim: (n_states, n_parcels)
+            np.array(map_statistics["connectivity"]["tstats"]), # dim: (n_states, n_parcels, n_parcels)
         )
+        pvalues = (
+            np.array(map_statistics["power"]["pvalues"]), # dim: (n_states, n_parcels)
+            np.array(map_statistics["power_dynamic"]["pvalues"]), # dim: (n_states, n_parcels)
+            np.array(map_statistics["connectivity"]["pvalues"]), # dim: (n_states, n_parcels, n_parcels)
+        )
+        tstat_map.append(tstats)
         pval_map.append(pvalues)
         mask_map.append(tuple(map(lambda x: x < 0.05, pvalues)))
 
@@ -68,7 +75,7 @@ if __name__ == "__main__":
     
     # Visualize reproducibility of power maps
     print("*** Reproducibility of power maps ***")
-    pval_power_map = np.mean([pval[0] for pval in pval_map], axis=0)
+    tstat_power_map = np.mean([tstat[0] for tstat in tstat_map], axis=0)
     mask_power_map = np.sum([mask[0] for mask in mask_map], axis=0)
 
     for n in range(n_class):
@@ -88,19 +95,19 @@ if __name__ == "__main__":
             )
             fig.savefig(os.path.join(SAVE_DIR, f"reprod_power_count_{n}.png"), transparent=True)
             plt.close(fig)
-            # Plot average p-values across runs
+            # Plot average t-statistics across runs
             plot_power_map(
-                pval_power_map[n, :],
+                tstat_power_map[n, :],
                 mask_file,
                 parcellation_file,
-                filename=os.path.join(SAVE_DIR, f"reprod_power_pval_{n}.png"),
-                asymmetric_data=True,
-                colormap="plasma_r",
+                filename=os.path.join(SAVE_DIR, f"reprod_power_tstat_{n}.png"),
+                asymmetric_data=False,
+                colormap="RdBu_r",
             )
 
     # Visualize reproducibility of power maps (mean across states/modes subtracted)
     print("*** Reproducibility of power maps (mean-subtracted) ***")
-    pval_power_map_dynamic = np.mean([pval[1] for pval in pval_map], axis=0)
+    tstat_power_map_dynamic = np.mean([tstat[1] for tstat in tstat_map], axis=0)
     mask_power_map_dynamic = np.sum([mask[1] for mask in mask_map], axis=0)
 
     for n in range(n_class):
@@ -120,24 +127,24 @@ if __name__ == "__main__":
             )
             fig.savefig(os.path.join(SAVE_DIR, f"reprod_power_dynamic_count_{n}.png"), transparent=True)
             plt.close(fig)
-            # Plot average p-values across runs
+            # Plot average t-statistics across runs
             plot_power_map(
-                pval_power_map_dynamic[n, :],
+                tstat_power_map_dynamic[n, :],
                 mask_file,
                 parcellation_file,
-                filename=os.path.join(SAVE_DIR, f"reprod_power_dynamic_pval_{n}.png"),
-                asymmetric_data=True,
-                colormap="plasma_r",
+                filename=os.path.join(SAVE_DIR, f"reprod_power_dynamic_tstat_{n}.png"),
+                asymmetric_data=False,
+                colormap="RdBu_r",
             )
 
     # Visualize reproducibility of connectivity maps
     print("*** Reproducibility of connectivity maps ***")
-    pval_conn_map = np.mean([pval[2] for pval in pval_map], axis=0)
+    tstat_conn_map = np.mean([tstat[2] for tstat in tstat_map], axis=0)
     mask_conn_map = np.sum([mask[2] for mask in mask_map], axis=0, dtype=float)
 
     for n in range(n_class):
+        np.fill_diagonal(tstat_conn_map[n], np.nan)
         np.fill_diagonal(mask_conn_map[n], np.nan)
-        np.fill_diagonal(pval_conn_map[n], np.nan)
 
     for n in range(n_class):
         if np.nansum(mask_conn_map[n]) > 0:
@@ -147,21 +154,23 @@ if __name__ == "__main__":
                 mask_conn_map[n, :, :],
                 parcellation_file,
                 filename=os.path.join(SAVE_DIR, f"reprod_conn_count_{n}.png"),
-                colormap="YlGnBu",
+                colormap="viridis_r",
                 asymmetric_data=True,
                 discrete=n_runs,
             )
-            # Conserve the bottom 3% of p-values
-            percentile = -np.nanpercentile(-pval_conn_map[n, :, :], 97)
-            pval_conn_thr = pval_conn_map[n, :, :]
-            pval_conn_thr[pval_conn_thr > percentile] = np.nan
-            # Plot average p-values across runs
+            # Conserve the top 3% of t-statistics
+            tstat_conn_thr = connectivity.threshold(
+                tstat_conn_map[n, :, :],
+                absolute_value=True,
+                percentile=97,
+            )
+            # Plot average t-statistics across runs
             plot_connectivity_map_for_reprod(
-                pval_conn_thr,
+                tstat_conn_thr,
                 parcellation_file,
-                filename=os.path.join(SAVE_DIR, f"reprod_conn_pval_{n}.png"),
-                colormap="plasma_r",
-                asymmetric_data=True,
+                filename=os.path.join(SAVE_DIR, f"reprod_conn_tstat_{n}.png"),
+                colormap="RdBu_r",
+                asymmetric_data=False,
             )
 
     print("Analysis complete.")
