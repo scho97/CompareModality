@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     # Set directories
     BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/static"
-    DATA_DIR = os.path.join(BASE_DIR, f"{modality}/{data_type}_{band_name}")
+    DATA_DIR = os.path.join(BASE_DIR, f"{modality}/{data_type}_{data_space}_{band_name}")
     SAVE_DIR = DATA_DIR
 
     # Load data
