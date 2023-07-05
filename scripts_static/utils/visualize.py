@@ -617,7 +617,7 @@ class GroupPSDDifference():
 
         # Set labels
         ax.set_xlabel('Frequency (Hz)', fontsize=14)
-        ax.set_ylabel('PSD(a.u.)', fontsize=14)
+        ax.set_ylabel('PSD $\Delta$ (Old - Young) (a.u.)', fontsize=14)
         ax.set_xlim([0, 46])
         ax.set_ylim(ylim)
         ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
