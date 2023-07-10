@@ -165,11 +165,12 @@ if __name__ == "__main__":
             stat = stat[not_olr_idx, :]
         
         # Conduct a statistical test
-        _, tstats, pvalues = group_diff_max_stat_perm(
+        _, tstats, pvalues, glm_model = group_diff_max_stat_perm(
             stat,
             group_assignments,
             n_perm=10000,
             metric="tstats",
+            return_model=True,
         )
         print(f"\tP-values (before correction): {pvalues}")
         
@@ -192,6 +193,7 @@ if __name__ == "__main__":
         # Store test statistics
         summ_stat_statistics[metric_names[i]] = {
             "tstats": tstats,
+            "copes": np.squeeze(glm_model.copes),
             "pvalues": pvalues,
         }
 

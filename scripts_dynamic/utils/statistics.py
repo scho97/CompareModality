@@ -15,7 +15,8 @@ def group_diff_max_stat_perm(
     n_perm, 
     covariates={}, 
     metric="tstats", 
-    n_jobs=1
+    n_jobs=1,
+    return_model=False,
 ):
     """Statistical significant testing for the difference between two groups.
 
@@ -42,6 +43,8 @@ def group_diff_max_stat_perm(
         Metric to use to build the null distribution. Can be 'tstats' or 'copes'.
     n_jobs : int
         Number of processes to run in parallel.
+    return_model : bool
+        Whether to return a fitted GLM OLS model.
 
     Returns
     -------
@@ -52,6 +55,8 @@ def group_diff_max_stat_perm(
         depending on the `metric`. Shape is (features1, features2, ...).
     pvalues : np.ndarray
         P-values for the features. Shape is (features1, features2, ...).
+    model : glmtools.fit.OLSModel
+        A fitted GLM OLS model. Returned only if return_model is True.
     """
     if not isinstance(data, np.ndarray):
         raise ValueError("data must be a numpy array.")
@@ -122,6 +127,9 @@ def group_diff_max_stat_perm(
         copes = abs(model.copes[0])
         percentiles = stats.percentileofscore(null_dist, copes)
     pvalues = 1 - percentiles / 100
+
+    if return_model:
+        return group_diff, statistics, pvalues, model
 
     return group_diff, statistics, pvalues
 

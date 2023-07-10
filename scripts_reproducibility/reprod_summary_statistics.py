@@ -46,36 +46,37 @@ if __name__ == "__main__":
     n_class = 8
 
     # Load test statistics
-    fo, lt, intv, sr = [], [], [], []
-    pvalues = dict(fo=[], lt=[], intv=[], sr=[])
-    for n, id in enumerate(run_ids):
-        run_dir = f"run{run_ids[n]}_{model_type}"
+    tstats = {"fo": [], "lt": [], "intv": [], "sr": []}
+    copes = {"fo": [], "lt": [], "intv": [], "sr": []}
+    pvalues = {"fo": [], "lt": [], "intv": [], "sr": []}
+    for id in run_ids:
+        run_dir = f"run{id}_{model_type}"
         with open(os.path.join(DATA_DIR, f"{run_dir}/model/results/summ_stat_statistics.pkl"), "rb") as input_path:
             summ_stat_statistics = pickle.load(input_path)
-        input_path.close()
-        # Get t-statistics
-        fo.append(summ_stat_statistics["fo"]["tstats"])
-        lt.append(summ_stat_statistics["lt"]["tstats"])
-        intv.append(summ_stat_statistics["intv"]["tstats"])
-        sr.append(summ_stat_statistics["sr"]["tstats"])
-        # Get p-values
-        pvalues["fo"].append(summ_stat_statistics["fo"]["pvalues"])
-        pvalues["lt"].append(summ_stat_statistics["lt"]["pvalues"])
-        pvalues["intv"].append(summ_stat_statistics["intv"]["pvalues"])
-        pvalues["sr"].append(summ_stat_statistics["sr"]["pvalues"])
-    
+        for key in tstats.keys():
+            tstats[key].append(summ_stat_statistics[key]["tstats"])
+            copes[key].append(summ_stat_statistics[key]["copes"])
+            pvalues[key].append(summ_stat_statistics[key]["pvalues"])
+
     # Build a dataframe
-    tstats = []
-    for val in [fo, lt, intv, sr]:
-        tstats.append(np.concatenate(val))
-    tstats = np.concatenate(tstats)
+    tvals, cope_vals = [], []
+    for key in tstats.keys():
+        tvals.append(np.concatenate(tstats[key]))
+        cope_vals.append(np.concatenate(copes[key]))
+    tvals = np.concatenate(tvals)
+    cope_vals = np.concatenate(cope_vals)
     class_lbls = np.tile(
-        np.tile(np.arange(8) + 1, len(run_ids)), 4
+        np.tile(np.arange(n_class) + 1, len(run_ids)), 4
     )
     metric_lbls = np.concatenate(
         [[lbl] * (n_runs * n_class) for lbl in ["fo", "lt", "intv", "sr"]]
     )
-    df = pd.DataFrame(data={"statistics": tstats, "class": class_lbls, "metrics": metric_lbls})
+    df = pd.DataFrame(data={
+        "t_statistics": tvals,
+        "cope_statistics": cope_vals,
+        "class": class_lbls,
+        "metrics": metric_lbls,
+    })
 
     # Set visualization parameters
     sns.set_style("white")
@@ -87,24 +88,27 @@ if __name__ == "__main__":
         "capprops": {"color": clr_gray},
     }
 
-    # Visualize test statistics per state
-    fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(15, 3))
-    for i, metric_name in enumerate(["fo", "lt", "intv", "sr"]):
-        df_metric = df[df["metrics"] == metric_name].copy()
-        sns.boxplot(data=df_metric, x="class", y="statistics", ax=ax[i], **box_plot_kwargs)
-        vmax = np.round(np.max(np.abs(ax[i].get_ylim())), 2)
-        ax[i].set(
-            xlim=[-1, n_class],
-            xlabel=None,
-            ylabel=None,
-            yticks = [-vmax, 0, vmax]
-        )
-        ax[i].tick_params(labelsize=14)
-        ax[i].spines[["top","left","bottom","right"]].set_linewidth(1.5)
-    plt.tight_layout()
-    subplot_pos = [axis.get_position() for axis in ax]
-    fig.savefig(os.path.join(SAVE_DIR, f"tstats_{modality}_{model_type}.png"))
-    plt.close(fig)
+    # Visualize test statistics per state/mode
+    statistics_name = ['t_statistics', 'cope_statistics']
+    file_name = ['tstats', 'copes']
+    for sname, fname in zip(statistics_name, file_name):
+        fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(15, 3))
+        for i, metric_name in enumerate(["fo", "lt", "intv", "sr"]):
+            df_metric = df[df["metrics"] == metric_name].copy()
+            sns.boxplot(data=df_metric, x="class", y=sname, ax=ax[i], **box_plot_kwargs)
+            vmax = np.round(np.max(np.abs(ax[i].get_ylim())), 2)
+            ax[i].set(
+                xlim=[-1, n_class],
+                xlabel=None,
+                ylabel=None,
+                yticks = [-vmax, 0, vmax]
+            )
+            ax[i].tick_params(labelsize=14)
+            ax[i].spines[["top","left","bottom","right"]].set_linewidth(1.5)
+        plt.tight_layout()
+        subplot_pos = [axis.get_position() for axis in ax]
+        fig.savefig(os.path.join(SAVE_DIR, f"{fname}_{modality}_{model_type}.png"))
+        plt.close(fig)
 
     # Visualize counts per state
     fig, ax = plt.subplots(nrows=1, ncols=4, figsize=(15, 3))
