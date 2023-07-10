@@ -420,7 +420,7 @@ def plot_selected_parcel_psd(edges, f, psd, filename):
 
     return None
 
-def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_ntest, filename, test_type="glmtools"):
+def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_ntest, filename, test_type="mne"):
     """Plots state/mode-specific PSDs and their between-group statistical differences.
 
     This function tests statistical differences using a cluster permutation test on the
@@ -466,89 +466,163 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
     qcmap = plt.rcParams["axes.prop_cycle"].by_key()["color"] # qualitative
 
     # Plot mode-specific PSDs and their statistical difference
-    fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(26, 10))
-    k, j = 0, 0 # subplot indices
-    for n in range(len(gpsd_young)):
-        print(f"Plotting {lbl} {n + 1}")
-        
-        # Set the row index
-        if (n % 4 == 0) and (n != 0):
-            k += 1
-        
-        # Perform cluster permutation tests on mode-specific PSDs
-        if test_type == "mne":
-            # Run permutation test
-            t_obs, clu_idx, _, _ = group_diff_mne_cluster_perm_2d(
-                x1=psd_old[:, n, :, :],
-                x2=psd_young[:, n, :, :],
-                bonferroni_ntest=bonferroni_ntest,
-            )
-        if test_type == "glmtools":
-            # Define group assignments
-            group_assignments = np.zeros((len(psd),))
-            group_assignments[group_idx[1]] = 1
-            group_assignments[group_idx[0]] = 2
-            # Run permutation test
-            t_obs, clu_idx = group_diff_cluster_perm_2d(
-                data=psd[:, n, :, :],
-                assignments=group_assignments,
-                n_perm=1500,
-                metric="tstats",
-                bonferroni_ntest=bonferroni_ntest,
-            )
-        n_clusters = len(clu_idx)
+    if psd.shape[1] > 1:
+        fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(26, 10))
+        k, j = 0, 0 # subplot indices
+        for n in range(len(gpsd_young)):
+            print(f"Plotting {lbl} {n + 1}")
+            
+            # Set the row index
+            if (n % 4 == 0) and (n != 0):
+                k += 1
+            
+            # Perform cluster permutation tests on mode-specific PSDs
+            if test_type == "mne":
+                # Run permutation test
+                t_obs, clu_idx, _, _ = group_diff_mne_cluster_perm_2d(
+                    x1=psd_old[:, n, :, :],
+                    x2=psd_young[:, n, :, :],
+                    bonferroni_ntest=bonferroni_ntest,
+                )
+            if test_type == "glmtools":
+                # Define group assignments
+                group_assignments = np.zeros((len(psd),))
+                group_assignments[group_idx[1]] = 1
+                group_assignments[group_idx[0]] = 2
+                # Run permutation test
+                t_obs, clu_idx = group_diff_cluster_perm_2d(
+                    data=psd[:, n, :, :],
+                    assignments=group_assignments,
+                    n_perm=1500,
+                    metric="tstats",
+                    bonferroni_ntest=bonferroni_ntest,
+                )
+            n_clusters = len(clu_idx)
 
-        # Average group-level PSDs over the parcels
-        py = np.mean(gpsd_young[n], axis=0)
-        po = np.mean(gpsd_old[n], axis=0)
-        ey = np.std(gpsd_young[n], axis=0) / np.sqrt(gpsd_young.shape[0])
-        eo = np.std(gpsd_old[n], axis=0) / np.sqrt(gpsd_old.shape[0])
+            # Average group-level PSDs over the parcels
+            py = np.mean(gpsd_young[n], axis=0)
+            po = np.mean(gpsd_old[n], axis=0)
+            ey = np.std(gpsd_young[n], axis=0) / np.sqrt(gpsd_young.shape[0])
+            eo = np.std(gpsd_old[n], axis=0) / np.sqrt(gpsd_old.shape[0])
 
-        # Plot mode-specific group-level PSDs
-        ax[k, j].plot(f, py, c=qcmap[n], label="Young")
-        ax[k, j].plot(f, po, c=qcmap[n], label="Old", linestyle="--")
-        ax[k, j].fill_between(f, py - ey, py + ey, color=qcmap[n], alpha=0.1)
-        ax[k, j].fill_between(f, po - eo, po + eo, color=qcmap[n], alpha=0.1)
-        if n_clusters > 0:
-            for c in range(n_clusters):
-                ax[k, j].axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
+            # Plot mode-specific group-level PSDs
+            ax[k, j].plot(f, py, c=qcmap[n], label="Young")
+            ax[k, j].plot(f, po, c=qcmap[n], label="Old", linestyle="--")
+            ax[k, j].fill_between(f, py - ey, py + ey, color=qcmap[n], alpha=0.1)
+            ax[k, j].fill_between(f, po - eo, po + eo, color=qcmap[n], alpha=0.1)
+            if n_clusters > 0:
+                for c in range(n_clusters):
+                    ax[k, j].axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
 
-        # Shrink axes to make space for topographical maps
-        ax_pos = ax[k, j].get_position()
-        ax[k, j].set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
+            # Shrink axes to make space for topographical maps
+            ax_pos = ax[k, j].get_position()
+            ax[k, j].set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
 
-        # Set labels
-        ax[k, j].set_xlabel('Frequency (Hz)', fontsize=14)
-        if j == 0:
-            ax[k, j].set_ylabel('PSD (a.u.)', fontsize=14)
-        ax[k, j].set_title(f'{lbl} {n + 1}', fontsize=14)
-        ax[k, j].ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
-        ax[k, j].tick_params(labelsize=14)
-        ax[k, j].yaxis.offsetText.set_fontsize(14)
+            # Set labels
+            ax[k, j].set_xlabel("Frequency (Hz)", fontsize=14)
+            if j == 0:
+                ax[k, j].set_ylabel("PSD $\Delta$ (Old - Young) (a.u.)", fontsize=14)
+            ax[k, j].set_title(f"{lbl} {n + 1}", fontsize=14)
+            ax[k, j].ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
+            ax[k, j].tick_params(labelsize=14)
+            ax[k, j].yaxis.offsetText.set_fontsize(14)
 
-        # Plot observed statistics
-        end_pt = np.mean([py[-1], po[-1]])
-        criteria = np.mean([ax[k, j].get_ylim()[0], ax[k, j].get_ylim()[1] * 0.95])
-        if end_pt >= criteria:
-            inset_bbox = (0, -0.22, 1, 1)
-        if end_pt < criteria:
-            inset_bbox = (0, 0.28, 1, 1)
-        ax_inset = inset_axes(ax[k, j], width='40%', height='30%', 
-                              loc='center right', bbox_to_anchor=inset_bbox,
-                              bbox_transform=ax[k, j].transAxes)
-        ax_inset.plot(f, t_obs, color='k', lw=2) # plot t-spectra
-        for c in range(len(clu_idx)):
-            ax_inset.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
-        ax_inset.set_ylabel('t-statistics', fontsize=12)
-        ax_inset.tick_params(labelsize=12)
+            # Plot observed statistics
+            end_pt = np.mean([py[-1], po[-1]])
+            criteria = np.mean([ax[k, j].get_ylim()[0], ax[k, j].get_ylim()[1] * 0.95])
+            if end_pt >= criteria:
+                inset_bbox = (0, -0.22, 1, 1)
+            if end_pt < criteria:
+                inset_bbox = (0, 0.28, 1, 1)
+            ax_inset = inset_axes(ax[k, j], width='40%', height='30%', 
+                                loc='center right', bbox_to_anchor=inset_bbox,
+                                bbox_transform=ax[k, j].transAxes)
+            ax_inset.plot(f, t_obs, color='k', lw=2) # plot t-spectra
+            for c in range(len(clu_idx)):
+                ax_inset.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
+            ax_inset.set_ylabel('t-statistics', fontsize=12)
+            ax_inset.tick_params(labelsize=12)
 
-        # Set the column index
-        j += 1
-        if (j % 4 == 0) and (j != 0):
-            j = 0
+            # Set the column index
+            j += 1
+            if (j % 4 == 0) and (j != 0):
+                j = 0
 
-    fig.savefig(filename)
-    plt.close(fig)
+        fig.savefig(filename)
+        plt.close(fig)
+    else:
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6.5, 5))
+        for n in range(len(gpsd_young)):
+            print(f"Plotting {lbl} {n + 1}")
+
+            # Perform cluster permutation tests on mode-specific PSDs
+            if test_type == "mne":
+                # Run permutation test
+                t_obs, clu_idx, _, _ = group_diff_mne_cluster_perm_2d(
+                    x1=psd_old[:, n, :, :],
+                    x2=psd_young[:, n, :, :],
+                    bonferroni_ntest=bonferroni_ntest,
+                )
+            if test_type == "glmtools":
+                # Define group assignments
+                group_assignments = np.zeros((len(psd),))
+                group_assignments[group_idx[1]] = 1
+                group_assignments[group_idx[0]] = 2
+                # Run permutation test
+                t_obs, clu_idx = group_diff_cluster_perm_2d(
+                    data=psd[:, n, :, :],
+                    assignments=group_assignments,
+                    n_perm=1500,
+                    metric="tstats",
+                    bonferroni_ntest=bonferroni_ntest,
+                )
+            n_clusters = len(clu_idx)
+
+            # Average group-level PSDs over the parcels
+            py = np.mean(gpsd_young[n], axis=0)
+            po = np.mean(gpsd_old[n], axis=0)
+            ey = np.std(gpsd_young[n], axis=0) / np.sqrt(gpsd_young.shape[0])
+            eo = np.std(gpsd_old[n], axis=0) / np.sqrt(gpsd_old.shape[0])
+
+            # Plot mode-specific group-level PSDs
+            ax.plot(f, py, c="k", label="Young")
+            ax.plot(f, po, c="k", label="Old", linestyle="--")
+            ax.fill_between(f, py - ey, py + ey, color="k", alpha=0.1)
+            ax.fill_between(f, po - eo, po + eo, color="k", alpha=0.1)
+            if n_clusters > 0:
+                for c in range(n_clusters):
+                    ax.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
+
+            # Shrink axes to make space for topographical maps
+            ax_pos = ax.get_position()
+            ax.set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
+
+            # Set labels
+            ax.set_xlabel("Frequency (Hz)", fontsize=14)
+            ax.set_ylabel("PSD $\Delta$ (Old - Young) (a.u.)", fontsize=14)
+            ax.set_title(f"Static mean across {lbl.lower()}s", fontsize=14)
+            ax.ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
+            ax.tick_params(labelsize=14)
+            ax.yaxis.offsetText.set_fontsize(14)
+
+            # Plot observed statistics
+            end_pt = np.mean([py[-1], po[-1]])
+            criteria = np.mean([ax.get_ylim()[0], ax.get_ylim()[1] * 0.95])
+            if end_pt >= criteria:
+                inset_bbox = (0, -0.22, 1, 1)
+            if end_pt < criteria:
+                inset_bbox = (0, 0.28, 1, 1)
+            ax_inset = inset_axes(ax, width='40%', height='30%', 
+                                loc='center right', bbox_to_anchor=inset_bbox,
+                                bbox_transform=ax.transAxes)
+            ax_inset.plot(f, t_obs, color='k', lw=2) # plot t-spectra
+            for c in range(len(clu_idx)):
+                ax_inset.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
+            ax_inset.set_ylabel('t-statistics', fontsize=12)
+            ax_inset.tick_params(labelsize=12)
+
+        fig.savefig(filename)
+        plt.close(fig)
 
     return None
 

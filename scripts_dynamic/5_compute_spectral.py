@@ -207,7 +207,7 @@ if __name__ == "__main__":
             parcellation_file=parcellation_file,
             method=model_type,
             bonferroni_ntest=n_class,
-            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png")
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png"),
         )
     else:
         visualize.plot_mode_spectra_group_diff_2d(
@@ -217,7 +217,7 @@ if __name__ == "__main__":
             group_idx=[young_idx, old_idx],
             method=model_type,
             bonferroni_ntest=n_class,
-            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png")
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png"),
         )
 
     # Cluster permutation test on PSDs (mean-subtracted)
@@ -236,7 +236,7 @@ if __name__ == "__main__":
             parcellation_file=parcellation_file,
             method=model_type,
             bonferroni_ntest=n_class,
-            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png")
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png"),
         )
     else:
         visualize.plot_mode_spectra_group_diff_2d(
@@ -246,7 +246,38 @@ if __name__ == "__main__":
             group_idx=[young_idx, old_idx],
             method=model_type,
             bonferroni_ntest=n_class,
-            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png")
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png"),
+        )
+
+    # Cluster permutation test on PSDs (mean-only)
+    if model_type == "hmm":
+        input_psd = np.average(psd, axis=1, weights=gfo, keepdims=True)
+    if model_type == "dynemo":
+        input_psd = psd[:, 1, :, :, :] # use regression intercepts
+        input_psd = np.expand_dims(input_psd[:, 0, :, :], axis=1)
+        # all modes have same regression intercepts
+    # NOTE: The mean across states/modes is extracted from the PSDs subject-wise.
+
+    if len(cluster_dimension) == 2:
+        visualize.plot_mode_spectra_group_diff_3d(
+            f,
+            input_psd,
+            ts,
+            group_idx=[young_idx, old_idx],
+            parcellation_file=parcellation_file,
+            method=model_type,
+            bonferroni_ntest=1,
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_static.png"),
+        )
+    else:
+        visualize.plot_mode_spectra_group_diff_2d(
+            f,
+            input_psd,
+            ts,
+            group_idx=[young_idx, old_idx],
+            method=model_type,
+            bonferroni_ntest=1,
+            filename=os.path.join(DATA_DIR, "analysis/psd_cluster_static.png"),
         )
 
     # Plot PSD (mean-subtracted) vs. Coherence
