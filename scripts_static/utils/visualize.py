@@ -40,7 +40,7 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
         Defaults to None, but required for sensor data.
     plot_kwargs : dict
         Keyword arguments to pass to `nilearn.plotting.plot_img_on_surf`.
-        Currently, only used when data_space is "source".
+        Currently, only supported when data_space is "source".
     """
     
     # Validation
@@ -77,10 +77,7 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
             show=False,
         )
         cb_ax = fig.add_axes([0.25, 0.11, 0.50, 0.05])
-        cb = plt.colorbar(im, cax=cb_ax, orientation="horizontal")
-        cb.ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
-        fig.savefig(filename)
-        plt.close(fig)
+        plt.colorbar(im, cax=cb_ax, orientation="horizontal")
 
     # Plot sufrace map
     if data_space == "source":
@@ -91,11 +88,20 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
             plot_kwargs=plot_kwargs,
         )
         fig = figures[0]
-        cbar_ax = axes[0][-1]
-        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
         fig.set_size_inches(5, 6)
-        fig.savefig(filename)
-        plt.close(fig)
+        cb_ax = axes[0][-1]
+        pos = cb_ax.get_position()
+        new_pos = [pos.x0, pos.y0 + 0.01, pos.width, pos.height]
+        cb_ax.set_position(new_pos)
+    
+    # Set colorbar styles
+    cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 4))
+    cb_ax.tick_params(labelsize=14)
+    cb_ax.xaxis.offsetText.set_fontsize(14)
+
+    # Save figure
+    fig.savefig(filename)
+    plt.close(fig)
 
     return None
 

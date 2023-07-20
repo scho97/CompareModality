@@ -6,7 +6,6 @@
 import os
 import pickle
 import numpy as np
-import matplotlib
 from utils.visualize import plot_group_power_map
 
 
@@ -43,7 +42,6 @@ if __name__ == "__main__":
     gpower_diff = gpower_o - gpower_y
 
     # Set visualization parameters
-    matplotlib.rcParams['font.size'] = 12
     hmax = np.max([gpower_y, gpower_o])
     hmax *= 1.5 # add some margin to prevent oversaturation
 
