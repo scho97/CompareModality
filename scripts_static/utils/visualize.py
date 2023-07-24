@@ -91,13 +91,13 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
         fig.set_size_inches(5, 6)
         cb_ax = axes[0][-1]
         pos = cb_ax.get_position()
-        new_pos = [pos.x0, pos.y0 + 0.01, pos.width, pos.height]
+        new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
         cb_ax.set_position(new_pos)
     
     # Set colorbar styles
     cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 4))
-    cb_ax.tick_params(labelsize=14)
-    cb_ax.xaxis.offsetText.set_fontsize(14)
+    cb_ax.tick_params(labelsize=18)
+    cb_ax.xaxis.offsetText.set_fontsize(18)
 
     # Save figure
     fig.savefig(filename)
