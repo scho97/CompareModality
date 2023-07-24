@@ -204,9 +204,9 @@ def plot_grouped_violin(data, group_label, method_name, filename, ylbl=None, pva
         xticks=np.arange(n_features),
         xticklabels=np.arange(n_features) + 1,
     )
-    ax.set_xlabel(f"{lbl}s", fontsize=14)
-    ax.set_ylabel(ylbl, fontsize=14)
-    ax.tick_params(labelsize=14)
+    ax.set_xlabel(f"{lbl}s", fontsize=18)
+    ax.set_ylabel(ylbl, fontsize=18)
+    ax.tick_params(labelsize=18)
     ax.get_legend().remove()
     # vp.legend(fontsize=10, bbox_to_anchor=(1.01, 1.15))
     plt.tight_layout()
@@ -514,18 +514,18 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
                 for c in range(n_clusters):
                     ax[k, j].axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
 
-            # Shrink axes to make space for topographical maps
-            ax_pos = ax[k, j].get_position()
-            ax[k, j].set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
+            # # Shrink axes to make space for topographical maps
+            # ax_pos = ax[k, j].get_position()
+            # ax[k, j].set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
 
             # Set labels
-            ax[k, j].set_xlabel("Frequency (Hz)", fontsize=14)
+            ax[k, j].set_xlabel("Frequency (Hz)", fontsize=18)
             if j == 0:
-                ax[k, j].set_ylabel("PSD $\Delta$ (Old - Young) (a.u.)", fontsize=14)
-            ax[k, j].set_title(f"{lbl} {n + 1}", fontsize=14)
+                ax[k, j].set_ylabel("PSD (a.u.)", fontsize=18)
+            ax[k, j].set_title(f"{lbl} {n + 1}", fontsize=18)
             ax[k, j].ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
-            ax[k, j].tick_params(labelsize=14)
-            ax[k, j].yaxis.offsetText.set_fontsize(14)
+            ax[k, j].tick_params(labelsize=18)
+            ax[k, j].yaxis.offsetText.set_fontsize(18)
 
             # Plot observed statistics
             end_pt = np.mean([py[-1], po[-1]])
@@ -540,18 +540,23 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
             ax_inset.plot(f, t_obs, color='k', lw=2) # plot t-spectra
             for c in range(len(clu_idx)):
                 ax_inset.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
-            ax_inset.set_ylabel('t-statistics', fontsize=12)
-            ax_inset.tick_params(labelsize=12)
+            ax_inset.set(
+                xticks=np.arange(0, max(f), 20),
+                ylabel="t-statistics",
+            )
+            ax_inset.set_ylabel('t-statistics', fontsize=16)
+            ax_inset.tick_params(labelsize=16)
 
             # Set the column index
             j += 1
             if (j % 4 == 0) and (j != 0):
                 j = 0
 
+        plt.subplots_adjust(hspace=0.5)
         fig.savefig(filename)
         plt.close(fig)
     else:
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6.5, 5))
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
         for n in range(len(gpsd_young)):
             print(f"Plotting {lbl} {n + 1}")
 
@@ -593,17 +598,13 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
                 for c in range(n_clusters):
                     ax.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
 
-            # Shrink axes to make space for topographical maps
-            ax_pos = ax.get_position()
-            ax.set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
-
             # Set labels
-            ax.set_xlabel("Frequency (Hz)", fontsize=14)
-            ax.set_ylabel("PSD $\Delta$ (Old - Young) (a.u.)", fontsize=14)
-            ax.set_title(f"Static mean across {lbl.lower()}s", fontsize=14)
+            ax.set_xlabel("Frequency (Hz)", fontsize=16)
+            ax.set_ylabel("PSD (a.u.)", fontsize=16)
+            ax.set_title(f"Static mean across {lbl.lower()}s", fontsize=16)
             ax.ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
-            ax.tick_params(labelsize=14)
-            ax.yaxis.offsetText.set_fontsize(14)
+            ax.tick_params(labelsize=16)
+            ax.yaxis.offsetText.set_fontsize(16)
 
             # Plot observed statistics
             end_pt = np.mean([py[-1], po[-1]])
@@ -618,10 +619,10 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
             ax_inset.plot(f, t_obs, color='k', lw=2) # plot t-spectra
             for c in range(len(clu_idx)):
                 ax_inset.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
-            ax_inset.set_ylabel('t-statistics', fontsize=12)
-            ax_inset.tick_params(labelsize=12)
+            ax_inset.set_ylabel('t-statistics', fontsize=14)
+            ax_inset.tick_params(labelsize=14)
 
-        fig.savefig(filename)
+        fig.savefig(filename, bbox_inches="tight")
         plt.close(fig)
 
     return None
