@@ -121,8 +121,6 @@ if __name__ == "__main__":
     plt.close(fig)
 
     # Plot the results
-    matplotlib.rcParams['font.size'] = 12
-
     if data_type == "aec":
         # Get t-map
         tmap = np.zeros((n_parcels, n_parcels))
@@ -137,14 +135,18 @@ if __name__ == "__main__":
         ticks = np.arange(0, len(tmap), 12)
         tnorm = matplotlib.colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
         img = ax.imshow(tmap, cmap='RdBu_r', norm=tnorm)
-        ax.set_xticks(ticks)
-        ax.set_yticks(ticks)
-        ax.set_xticklabels(ticks + 1)
-        ax.set_yticklabels(ticks + 1)
-        ax.set_xlabel('Regions', fontsize=12)
-        ax.set_ylabel('Regions', fontsize=12)
-        cbar = fig.colorbar(img, ax=ax, shrink=0.96)
-        cbar.set_label("t-statistics", fontsize=12)
+        ax.set(
+            xticks=ticks,
+            yticks=ticks,
+            xticklabels=ticks + 1,
+            yticklabels=ticks + 1,
+        )
+        ax.tick_params(labelsize=18)
+        ax.set_xlabel('Regions', fontsize=18)
+        ax.set_ylabel('Regions', fontsize=18)
+        cbar = fig.colorbar(img, ax=ax, shrink=0.92)
+        cbar.set_label("t-statistics", fontsize=18)
+        cbar.ax.tick_params(labelsize=18)
         plt.tight_layout()
         plt.savefig(os.path.join(SAVE_DIR, "map_tscore.png"))
         plt.close(fig)
@@ -157,6 +159,8 @@ if __name__ == "__main__":
             parcellation_file=parcellation_file,
             plot_kwargs={"edge_cmap": "RdBu_r", "figure": fig, "axes": ax},
         )
+        cb_ax = fig.get_axes()[-1]
+        cb_ax.tick_params(labelsize=20)
         fig.savefig(os.path.join(SAVE_DIR, "network_tscore.png"), transparent=True)
         plt.close(fig)
 
@@ -177,10 +181,12 @@ if __name__ == "__main__":
             parcellation_file=parcellation_file,
             plot_kwargs={"edge_cmap": cmap, "figure": fig, "axes": ax},
         )
+        cb_ax = fig.get_axes()[-1]
+        cb_ax.tick_params(labelsize=20)
         fig.savefig(savename, transparent=True)
         plt.close()
 
-    
+
     if data_type == "power":
         # Get t-map
         tmap = model.tstats[0]
@@ -193,9 +199,13 @@ if __name__ == "__main__":
             plot_kwargs={"cmap": "RdBu_r"},
         )
         fig = figures[0]
-        cbar_ax = axes[0][-1]
-        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
         fig.set_size_inches(5, 6)
+        cb_ax = axes[0][-1]
+        pos = cb_ax.get_position()
+        new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
+        cb_ax.set_position(new_pos)
+        cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
+        cb_ax.tick_params(labelsize=18)
         fig.savefig(os.path.join(SAVE_DIR, "map_tscore.png"))
         plt.close(fig)
 
@@ -217,9 +227,13 @@ if __name__ == "__main__":
             plot_kwargs={"cmap": cmap},
         )
         fig = figures[0]
-        cbar_ax = axes[0][-1]
-        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
         fig.set_size_inches(5, 6)
+        cb_ax = axes[0][-1]
+        pos = cb_ax.get_position()
+        new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
+        cb_ax.set_position(new_pos)
+        cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
+        cb_ax.tick_params(labelsize=18)
         fig.savefig(savename)
         plt.close(fig)
 
