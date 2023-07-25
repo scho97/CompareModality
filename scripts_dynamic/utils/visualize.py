@@ -8,10 +8,10 @@ import seaborn as sns
 import matplotlib
 import matplotlib.pyplot as plt
 
-from scipy import stats
 from osl_dynamics import analysis
 from osl_dynamics.utils import plotting
 from osl_dynamics.utils.parcellation import Parcellation
+from utils.array_ops import round_nonzero_decimal, round_up_half
 from utils.data import divide_psd_by_age
 from utils.statistics import (group_diff_mne_cluster_perm_2d,
                               group_diff_cluster_perm_2d,
@@ -287,15 +287,25 @@ def plot_power_map(
         plot_kwargs={"cmap": colormap},
     )
     for i, fig in enumerate(figures):
-        cbar_ax = axes[i][-1]
-        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
-        cbar_pos = np.array(cbar_ax.get_position())
-        cbar_pos[0, 1] += 0.01
-        cbar_pos[1, 1] += 0.01
-        cbar_ax.set_position(matplotlib.transforms.Bbox(cbar_pos))
-        cbar_ax.tick_params(labelsize=14)
-        cbar_ax.xaxis.offsetText.set_fontsize(14)
+        # Reset figure size
         fig.set_size_inches(5,6)
+        # Change colorbar position
+        cbar_ax = axes[i][-1]
+        pos = cbar_ax.get_position()
+        new_pos = [pos.x0 * 0.92, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
+        cbar_ax.set_position(new_pos)
+        # Edit colobar ticks
+        if np.any(np.abs(np.array(cbar_ax.get_xlim())) < 1):
+            hmin = round_nonzero_decimal(cbar_ax.get_xlim()[0], method="ceil") # ceiling for negative values
+            hmax = round_nonzero_decimal(cbar_ax.get_xlim()[1], method="floor") # floor for positive values
+            cbar_ax.set_xticks(np.array([hmin, 0, hmax]))
+        else:
+            cbar_ax.set_xticks(
+                [round_up_half(val) for val in cbar_ax.get_xticks()[1:-1]]
+            )
+        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
+        cbar_ax.tick_params(labelsize=18)
+        cbar_ax.xaxis.offsetText.set_fontsize(18)
         if len(figures) > 1:
             fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{i}"))
         else:
@@ -346,6 +356,8 @@ def plot_connectivity_map(
             parcellation_file=parcellation_file,
             plot_kwargs={"edge_cmap": colormap, "figure": fig, "axes": ax},
         )
+        cb_ax = fig.get_axes()[-1]
+        cb_ax.tick_params(labelsize=20)
         if n_modes != 1:
             fig.savefig(
                 filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{n}"),
@@ -513,10 +525,6 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
             if n_clusters > 0:
                 for c in range(n_clusters):
                     ax[k, j].axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
-
-            # # Shrink axes to make space for topographical maps
-            # ax_pos = ax[k, j].get_position()
-            # ax[k, j].set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.90])
 
             # Set labels
             ax[k, j].set_xlabel("Frequency (Hz)", fontsize=18)
