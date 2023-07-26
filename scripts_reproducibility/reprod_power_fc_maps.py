@@ -11,7 +11,7 @@ from sys import argv
 from osl_dynamics.analysis import connectivity
 from utils import (plot_power_map,
                    plot_surfaces,
-                   plot_connectivity_map_for_reprod,)
+                   plot_connectivity_map_for_reprod)
 
 
 if __name__ == "__main__":

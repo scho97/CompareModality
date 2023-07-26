@@ -12,7 +12,10 @@ from osl_dynamics import files, analysis
 from osl_dynamics.utils import plotting
 from osl_dynamics.utils.parcellation import Parcellation
 from nilearn.plotting import plot_glass_brain
-from utils import (min_max_scale, plot_connectome)
+from utils import (min_max_scale,
+                   plot_connectome,
+                   round_nonzero_decimal,
+                   round_up_half)
 
 def plot_correlations(data1, data2, filename, colormap="coolwarm"):
     """Computes correlation between the input data and plots 
@@ -137,15 +140,25 @@ def plot_power_map(
         plot_kwargs={"cmap": colormap},
     )
     for i, fig in enumerate(figures):
+        # Reset figure size
+        fig.set_size_inches(5, 6)
+        # Change colorbar position
         cbar_ax = axes[i][-1]
-        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
-        cbar_pos = np.array(cbar_ax.get_position())
-        cbar_pos[0, 1] += 0.01
-        cbar_pos[1, 1] += 0.01
-        cbar_ax.set_position(matplotlib.transforms.Bbox(cbar_pos))
-        cbar_ax.tick_params(labelsize=14)
-        cbar_ax.xaxis.offsetText.set_fontsize(14)
-        fig.set_size_inches(5,6)
+        pos = cbar_ax.get_position()
+        new_pos = [pos.x0 * 0.92, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
+        cbar_ax.set_position(new_pos)
+        # Edit colorbar ticks
+        if np.any(np.abs(np.array(cbar_ax.get_xlim())) < 1):
+            hmin = round_nonzero_decimal(cbar_ax.get_xlim()[0], method="ceil") # ceiling for negative values
+            hmax = round_nonzero_decimal(cbar_ax.get_xlim()[1], method="floor") # floor for positive values
+            cbar_ax.set_xticks(np.array([hmin, 0, hmax]))
+        else:
+            cbar_ax.set_xticks(
+                [round_up_half(val) for val in cbar_ax.get_xticks()[1:-1]]
+            )
+        cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
+        cbar_ax.tick_params(labelsize=24)
+        cbar_ax.xaxis.offsetText.set_fontsize(24)
         if len(figures) > 1:
             fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{i}"))
         else:
@@ -257,7 +270,7 @@ def plot_surfaces(
             norm = matplotlib.colors.Normalize(vmin=org_vmin, vmax=org_vmax)
         cb = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=colormap), orientation="vertical")
         cb.ax.set_position(pos)
-        cb.ax.tick_params(labelsize=14)
+        cb.ax.tick_params(labelsize=20)
         cb.ax.yaxis.set_ticks_position('left')
         if discrete:
             yticks = np.arange(0, discrete + 2, 2)
@@ -367,7 +380,7 @@ def plot_connectivity_map_for_reprod(
                 colormap = plt.get_cmap(colormap)
             cb = plt.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=colormap), orientation="vertical")
             cb.ax.set_position(pos)
-            cb.ax.tick_params(labelsize=14)
+            cb.ax.tick_params(labelsize=20)
             cb.ax.yaxis.set_ticks_position('left')
             if discrete:
                 yticks = np.arange(0, discrete + 2, 2)
@@ -375,7 +388,7 @@ def plot_connectivity_map_for_reprod(
             else:
                 cb.ax.set_yticks(np.linspace(org_vmin, org_vmax, 3))
         else:
-            cb_ax.tick_params(labelsize=14)
+            cb_ax.tick_params(labelsize=20)
         # Save figure
         if n_modes != 1:
             filename = filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{n}")
