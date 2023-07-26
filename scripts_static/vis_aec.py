@@ -6,7 +6,6 @@
 import os
 import pickle
 import numpy as np
-import matplotlib
 from utils import visualize
 from osl_dynamics.analysis import connectivity
 
@@ -45,10 +44,6 @@ if __name__ == "__main__":
     np.fill_diagonal(gconn_map_o, np.nan)
     # Note: NaN is preferred over zeros, because a zero value will be included in the distribution, while NaNs won't.
 
-    # Set default visualization configurations
-    matplotlib.rc('xtick', labelsize=12)
-    matplotlib.rc('ytick', labelsize=12)
-
     # Plot AEC maps
     print("Plotting AEC maps ...")
 
@@ -77,20 +72,20 @@ if __name__ == "__main__":
     # Plot AEC graph networks
     print("Plotting AEC networks ...")
 
-    connectivity.save(
-        connectivity_map=gconn_map_y,
+    visualize.plot_group_connectivity_map(
+        conn_map=gconn_map_y,
+        parcellation_file=parcellation_file,
         filename=os.path.join(SAVE_DIR, "aec_network_young.png"),
-        parcellation_file=parcellation_file,
     )
-    connectivity.save(
-        connectivity_map=gconn_map_o,
+    visualize.plot_group_connectivity_map(
+        conn_map=gconn_map_o,
+        parcellation_file=parcellation_file,
         filename=os.path.join(SAVE_DIR, "aec_network_old.png"),
-        parcellation_file=parcellation_file,
     )
-    connectivity.save(
-        connectivity_map=diff_map,
-        filename=os.path.join(SAVE_DIR, "aec_network_diff.png"),
+    visualize.plot_group_connectivity_map(
+        conn_map=diff_map,
         parcellation_file=parcellation_file,
+        filename=os.path.join(SAVE_DIR, "aec_network_diff.png"),
     )
 
     print("Visualization complete.")

@@ -91,7 +91,7 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
         fig.set_size_inches(5, 6)
         cb_ax = axes[0][-1]
         pos = cb_ax.get_position()
-        new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
+        new_pos = [pos.x0 * 0.92, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
         cb_ax.set_position(new_pos)
     
     # Set colorbar styles
@@ -101,6 +101,52 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
 
     # Save figure
     fig.savefig(filename)
+    plt.close(fig)
+
+    return None
+
+def plot_group_connectivity_map(
+    conn_map,
+    parcellation_file,
+    filename,
+    colormap=None,
+):
+    """Plot group-level connectivity maps.
+
+    Parameters
+    ----------
+    conn_map : np.ndarray
+        Group-level connectivity map. Shape must be (n_channels, n_channels).
+    parcellation_file : str
+        Path to a brain parcellation file.
+    filename : str
+        File name to be used when saving a figure object.
+    colormap : str
+        Colors for connectivity edges. If None, a default colormap is used 
+        ("bwr").
+    """
+
+    # Validation
+    if conn_map.ndim != 2:
+        raise ValueError("conn_map should be a 2-D array.")
+    
+    # Set visualisation parameters
+    if colormap is None:
+        colormap = "bwr"
+
+    # Plot connectivity map
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 3))
+    analysis.connectivity.save(
+        connectivity_map=conn_map,
+        parcellation_file=parcellation_file,
+        plot_kwargs={"edge_cmap": colormap, "figure": fig, "axes": ax},
+    )
+    cb_ax = fig.get_axes()[-1]
+    pos = cb_ax.get_position()
+    new_pos = [pos.x0 * 1.03, pos.y0, pos.width, pos.height]
+    cb_ax.set_position(new_pos)
+    cb_ax.tick_params(labelsize=18)
+    fig.savefig(filename, transparent=True)
     plt.close(fig)
 
     return None
@@ -132,10 +178,15 @@ def plot_aec_heatmap(heatmap, filename, vmin=None, vmax=None):
         xticklabels=ticks + 1,
         yticklabels=ticks + 1,
     )
-    ax.set_xlabel("Regions", fontsize=12)
-    ax.set_ylabel("Regions", fontsize=12)
-    cbar = fig.colorbar(img, ax=ax, shrink=0.94)
-    cbar.set_label("Pearson Correlations", fontsize=12)
+    ax.tick_params(labelsize=16)
+    ax.set_xlabel("Regions", fontsize=16)
+    ax.set_ylabel("Regions", fontsize=16)
+    cbar = fig.colorbar(img, ax=ax, shrink=0.9)
+    cbar.set_label("Pearson Correlations", fontsize=16)
+    yticks = cbar.ax.get_yticks()[1:-1]
+    if len(yticks) > 6:
+        cbar.ax.set_yticks(yticks[::2])
+    cbar.ax.tick_params(labelsize=16)
     plt.tight_layout()    
     plt.savefig(filename)
     plt.close(fig)
