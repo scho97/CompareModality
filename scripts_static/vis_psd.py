@@ -79,7 +79,7 @@ if __name__ == "__main__":
     ax.spines[['top', 'right']].set_visible(False)
     ax.spines[['bottom', 'left']].set_linewidth(2)
     ax.tick_params(width=2)
-    plt.legend(loc="upper right")
+    plt.legend(loc="upper right", fontsize=11)
     plt.tight_layout()
     plt.savefig(os.path.join(SAVE_DIR, f'static_psd.png'))
     plt.close(fig)
