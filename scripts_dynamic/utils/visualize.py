@@ -869,10 +869,10 @@ def plot_pow_vs_coh(freqs, psd, coh, group_idx, method, filenames, freq_range = 
             ax.scatter(pos[g][n], sum_cos[g][n], alpha=0.6, label=f"{lbl} {n + 1}")
         ax.set_xlim([hmin, hmax])
         ax.set_ylim([vmin, vmax])
-        ax.set_xlabel("Power (a.u.)", fontsize=14)
-        ax.set_ylabel("Coherence", fontsize=14)
+        ax.set_xlabel("Power (a.u.)", fontsize=18)
+        ax.set_ylabel("Coherence", fontsize=18)
         ax.xaxis.set_major_locator(plt.MaxNLocator(5))
-        ax.tick_params(labelsize=14)
+        ax.tick_params(labelsize=18)
         if legend:
             ax.legend(bbox_to_anchor=(1.5, 0.5))
         ax.spines[['top', 'right']].set_visible(False)
