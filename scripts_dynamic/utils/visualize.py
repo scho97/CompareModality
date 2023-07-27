@@ -299,12 +299,13 @@ def plot_power_map(
             hmin = round_nonzero_decimal(cbar_ax.get_xlim()[0], method="ceil") # ceiling for negative values
             hmax = round_nonzero_decimal(cbar_ax.get_xlim()[1], method="floor") # floor for positive values
             cbar_ax.set_xticks(np.array([hmin, 0, hmax]))
+            cbar_ax.tick_params(labelsize=18)
         else:
             cbar_ax.set_xticks(
                 [round_up_half(val) for val in cbar_ax.get_xticks()[1:-1]]
             )
+            cbar_ax.tick_params(labelsize=22)
         cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
-        cbar_ax.tick_params(labelsize=18)
         cbar_ax.xaxis.offsetText.set_fontsize(18)
         if len(figures) > 1:
             fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{i}"))
