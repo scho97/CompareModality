@@ -334,7 +334,9 @@ def plot_connectivity_map_for_reprod(
             print("Unique count (edge) values: ", np.unique(conn_map_mode[~np.isnan(conn_map_mode)]))
             # Construct discrete colormap
             cmap = plt.get_cmap(colormap)
-            cmap = cmap(np.linspace(0, 1, discrete + 1))
+            n_exclude = 2 # number of light colors to exclude
+            cmap = cmap(np.linspace(0, 1, discrete + 1 + n_exclude))
+            cmap = cmap[n_exclude:]
             cmap[0, -1] = 0 # make the lowest value transparent
             colormap = matplotlib.colors.ListedColormap(cmap)
         # Rescale data
@@ -361,6 +363,7 @@ def plot_connectivity_map_for_reprod(
         parcellation = Parcellation(parcellation_file)
         if discrete:
             norm = matplotlib.colors.BoundaryNorm(boundaries=np.linspace(0, 1.1, discrete + 2), ncolors=discrete + 1)
+            plot_kwargs.update({"edge_kwargs": {"lw": 4}})
         else: norm = None
         plot_connectome(
             conn_map_mode,

@@ -154,7 +154,7 @@ if __name__ == "__main__":
                 mask_conn_map[n, :, :],
                 parcellation_file,
                 filename=os.path.join(SAVE_DIR, f"reprod_conn_count_{n}.png"),
-                colormap="viridis_r",
+                colormap="plasma_r",
                 asymmetric_data=True,
                 discrete=n_runs,
             )
