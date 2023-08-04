@@ -3,3 +3,4 @@
 """
 
 from .data import *
+from .visualize import *
