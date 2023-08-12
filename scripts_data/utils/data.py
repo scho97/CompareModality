@@ -183,7 +183,7 @@ def measure_data_length(dataset, sampling_frequency=None):
 
     # Store lengths of time series
     time_series_length = []
-    for ts in dataset.subjects:
+    for ts in dataset.arrays:
         time_series_length.append(len(ts) / sampling_frequency)
 
     return time_series_length
