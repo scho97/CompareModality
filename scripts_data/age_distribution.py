@@ -1,73 +1,153 @@
-"""Summarize age distributions of LEMON and CamCAN datasets
+"""Match age distributions of LEMON and CamCAN datasets and visualize their summary
 
 """
 
 # Set up dependencies
-import os, glob
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sys import argv
+import os
+import glob
+import pickle
+import numpy as np
 from utils import data
-from matplotlib.ticker import MaxNLocator
+from utils.visualize import plot_age_distributions
 
 
 if __name__ == "__main__":
-    # Set hyperparameters
-    if len(argv) != 2:
-        print("Need to pass one argument, e.g., python script.py eeg")
-        exit()
-    modality = argv[1]
-    print(f"[INFO] Modality: {modality.upper()}")
-
     # Set directory paths
     PROJECT_DIR = "/well/woolrich/projects"
-    if modality == "eeg":
-        dataset_dir = PROJECT_DIR + "/lemon/scho23"
-        metadata_dir = PROJECT_DIR + "/lemon/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
-    elif modality == "meg":
-        dataset_dir = PROJECT_DIR + "/camcan/winter23"
-        metadata_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
+    eeg_data_dir = PROJECT_DIR + "/lemon/scho23"
+    eeg_meta_dir = PROJECT_DIR + "/lemon/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
+    meg_data_dir = PROJECT_DIR + "/camcan/scho23"
+    meg_meta_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
     SAVE_DIR = "/well/woolrich/users/olt015/CompareModality/results/data"
 
-    # Set visualization parameters
-    cmap = sns.color_palette("deep")
-    sns.set_style("white")
+    # Set random seed number
+    n_seed = 2023
 
-    # Plot age distributions
-    if modality == "eeg":
-        data_name = "LEMON"
-        nbins = 'auto'
-        # Get data file paths
-        file_names = sorted(glob.glob(dataset_dir + "/src_ec/*/sflip_parc-raw.npy"))
-        # Get ages of young and old participants
-        ages_young, ages_old = data.get_age_lemon(metadata_dir, file_names)
-        ages_young, ages_old = sorted(ages_young), sorted(ages_old) # sort ages for ordered x-tick labels
-    if modality == "meg":
-        data_name = "CamCAN"
-        nbins = 8
-        # Get data file paths
-        file_names = sorted(glob.glob(dataset_dir + "/src/*/sflip_parc.npy"))
-        # Get ages of young and old participants
-        ages_young, ages_old = data.get_age_camcan(metadata_dir, file_names)
-        # Subsample young and old subjects randomly to match the data size of EEG LEMON
-        ages_young, ages_old = data.random_subsample(
-            group_data=[ages_young, ages_old],
-            sample_size=[86, 29],
-            seed=2023,
-            verbose=True,
+    # Get subject ages and indices
+    eeg_file_names = sorted(glob.glob(eeg_data_dir + "/src_ec/*/sflip_parc-raw.npy"))
+    eeg_ages_y, eeg_ages_o, eeg_idx_y, eeg_idx_o = data.get_age_lemon(eeg_meta_dir, eeg_file_names, return_indices=True)
+    meg_file_names = sorted(glob.glob(meg_data_dir + "/src/*/sflip_parc-raw.fif"))
+    meg_ages_y, meg_ages_o, meg_idx_y, meg_idx_o = data.get_age_camcan(meg_meta_dir, meg_file_names, return_indices=True)
+
+    # Validation
+    if len(np.unique(eeg_idx_y + eeg_idx_o)) != len(eeg_idx_y) + len(eeg_idx_o):
+        raise ValueError("same subject is included more than once (EEG LEMON).")
+    if len(np.unique(meg_idx_y + meg_idx_o)) != len(meg_idx_y) + len(meg_idx_o):
+        raise ValueError("same subject is included more than once (MEG CamCAN).")
+
+    # Match age distributions of young participants
+    #   NOTE: For 20-25, MEG (n=14) < EEG (n=43); for MEG, the upper bound was 24.
+    #         For 25-30, MEG (n=45) > EEG (n=39); for MEG, the upper bound was 29.
+    #         For 30-35, MEG (n=50) > EEG (n=7).
+    #         We select 14 subjects from EEG, 39 subjects from MEG, and 7 subjects from MEG, respectively.
+
+    # [1] Match EEG
+    eeg_y_bel_25 = np.concatenate(list(data.random_subsample(
+        [[val for val in list(zip(eeg_ages_y, eeg_idx_y)) if val[0] == '20-25']],
+        sample_size=14,
+        seed=n_seed,
+        verbose=False,
+    )))
+    eeg_y_abv_25 = [[age, str(idx)] for (age, idx) in list(zip(eeg_ages_y, eeg_idx_y)) if age != '20-25']
+    eeg_young_info = np.concatenate((eeg_y_bel_25, eeg_y_abv_25))
+
+    # [2] Match MEG
+    meg_ages_y = np.array(meg_ages_y)
+    meg_idx_y = np.array(meg_idx_y)
+    age_intervals = [[20, 24], [25, 29], [30, 35]]
+    meg_young_info = []
+    for n, (start, end) in enumerate(age_intervals):
+        mask = np.logical_and(meg_ages_y >= start, meg_ages_y <= end)
+        if n == 0:
+            meg_young_info += [np.array([list(row) for row in np.column_stack((meg_ages_y[mask], meg_idx_y[mask]))])]
+        else:
+            subsample_size = eeg_ages_y.count(
+                f"{start}-{end}" if n == len(age_intervals) - 1 else f"{start}-{end + 1}"
+            )
+            meg_young_info += list(data.random_subsample(
+                [list(zip(meg_ages_y[mask], meg_idx_y[mask]))],
+                sample_size=subsample_size,
+                seed=n_seed,
+                verbose=False,
+            ))
+    meg_young_info = np.concatenate(meg_young_info)
+
+    # [3] Extract results
+    eeg_ages_y = eeg_young_info[:, 0]
+    meg_ages_y = meg_young_info[:, 0]
+    eeg_idx_y = eeg_young_info[:, 1].astype(int)
+    meg_idx_y = meg_young_info[:, 1]
+
+    # Match age distributions of old participants
+    #   NOTE: Since MEG had much more old subjects than EEG, we will randomly subsample from the Cam-CAN subjects 
+    #   based on the LEMON dataset at each age interval.
+    meg_ages_o = np.array(meg_ages_o)
+    meg_idx_o = np.array(meg_idx_o)
+    age_intervals = [[55, 59], [60, 64], [65, 69], [70, 74], [75, 80]]
+    meg_old_info = []
+    for n, (start, end) in enumerate(age_intervals):
+        mask = np.logical_and(meg_ages_o >= start, meg_ages_o <= end)
+        subsample_size = eeg_ages_o.count(
+            f"{start}-{end}" if n == len(age_intervals) - 1 else f"{start}-{end + 1}"
         )
+        meg_old_info += list(data.random_subsample(
+            [list(zip(meg_ages_o[mask], meg_idx_o[mask]))],
+            sample_size=subsample_size,
+            seed=n_seed,
+            verbose=False,
+        ))
+    meg_old_info = np.concatenate(meg_old_info)
+    meg_ages_o = meg_old_info[:, 0]
+    meg_idx_o = meg_old_info[:, 1]
 
-    fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(7, 4))
-    sns.histplot(x=ages_young, ax=ax[0], color=cmap[0], bins=nbins)
-    sns.histplot(x=ages_old, ax=ax[1], color=cmap[3], bins=nbins)
-    ax[0].set_title(f"Young (n={len(ages_young)})")
-    ax[1].set_title(f"Old (n={len(ages_old)})")
-    for i in range(2):
-        ax[i].set_xlabel("Age")
-        ax[i].yaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
-    plt.suptitle(f"{data_name} Age Distribution ({modality.upper()})")
-    plt.tight_layout()
-    fig.savefig(os.path.join(SAVE_DIR, f"age_dist_{modality}.png"))
-    plt.close(fig)
+    # Get subject IDs
+    def get_subject_ids(filenames, idx_list):
+        id_list = []
+        for idx in idx_list:
+            id_list.append(filenames[idx].split("/")[-2])
+        return id_list
+
+    eeg_subjects_y = get_subject_ids(eeg_file_names, eeg_idx_y)
+    eeg_subjects_o = get_subject_ids(eeg_file_names, eeg_idx_o)
+    meg_subjects_y = get_subject_ids(meg_file_names, meg_idx_y)
+    meg_subjects_o = get_subject_ids(meg_file_names, meg_idx_o)
+
+    # Save subject ages and indices
+    output = {
+        "eeg": {
+            "age_young": eeg_ages_y,
+            "age_old": eeg_ages_o,
+            "index_young": eeg_idx_y,
+            "index_old": eeg_idx_o,
+            "subject_young": eeg_subjects_y,
+            "subject_old": eeg_subjects_o,
+        },
+        "meg": {
+            "age_young": meg_ages_y,
+            "age_old": meg_ages_o,
+            "index_young": meg_idx_y,
+            "index_old": meg_idx_o,
+            "subject_young": meg_subjects_y,
+            "subject_old": meg_subjects_o,
+        },
+    }
+    with open(os.path.join(SAVE_DIR, "age_group_idx.pkl"), "wb") as save_path:
+        pickle.dump(output, save_path)
+    save_path.close()
+
+    # Visualize age distributions
+    plot_age_distributions(
+        eeg_ages_y,
+        eeg_ages_o,
+        modality="eeg",
+        save_dir=SAVE_DIR,
+    )
+    plot_age_distributions(
+        meg_ages_y,
+        meg_ages_o,
+        modality="meg",
+        nbins=[[20, 25, 30, 35], [55, 60, 65, 70, 75, 80]],
+        save_dir=SAVE_DIR,
+    )
 
     print("Visualization Complete.")
