@@ -5,6 +5,7 @@
 # Set up dependencies
 import os
 import glob
+import pickle
 import numpy as np
 from sys import argv
 from osl_dynamics import data
@@ -26,62 +27,45 @@ if __name__ == "__main__":
     SAVE_DIR = "/well/woolrich/users/olt015/CompareModality/results/data"
     TMP_DIR = os.path.join(SAVE_DIR, "tmp")
     eeg_data_dir = PROJECT_DIR + "/lemon/scho23"
-    meg_data_dir = PROJECT_DIR + "/camcan/winter23"
+    meg_data_dir = PROJECT_DIR + "/camcan/scho23"
     meg_meta_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
+
+    # Load group information
+    with open(os.path.join(SAVE_DIR, "age_group_idx.pkl"), "rb") as input_path:
+        age_group_idx = pickle.load(input_path)
+    input_path.close()
 
     # Load data
     print("Loading data ...")
     if data_space == "source":
         # Get file paths
         eeg_file_names = sorted(glob.glob(eeg_data_dir + "/src_ec/*/sflip_parc-raw.npy"))
-        meg_file_names = sorted(glob.glob(meg_data_dir + "/src/*/sflip_parc.npy"))
+        meg_file_names = sorted(glob.glob(meg_data_dir + "/src/*/sflip_parc-raw.fif"))
+        eeg_file_names = [eeg_file_names[i] for i in np.concatenate((age_group_idx["eeg"]["index_young"], age_group_idx["eeg"]["index_old"]))]
+        meg_file_names = [meg_file_names[i] for i in np.concatenate((age_group_idx["meg"]["index_young"], age_group_idx["meg"]["index_old"]))]
 
-        # Select randomly subsampled subjects from MEG data
-        _, _, young_idx, old_idx = get_age_camcan(
-            meg_meta_dir, 
-            meg_file_names, 
-            data_space, 
-            return_indices=True,
-        )
-        young_idx, old_idx = random_subsample(
-            group_data=[young_idx, old_idx],
-            sample_size=[86, 29],
-            seed=2023,
-            verbose=True,
-        )
-        meg_file_names = [meg_file_names[i] for i in young_idx] + [meg_file_names[i] for i in old_idx]
-        
         # Build training data
         eeg_data = data.Data(eeg_file_names, store_dir=TMP_DIR)
-        meg_data = data.Data(meg_file_names, store_dir=TMP_DIR)
-   
+        meg_data = data.Data(meg_file_names, picks=["misc"], reject_by_annotation='omit', store_dir=TMP_DIR)
+
     elif data_space == "sensor":
         # Get file paths
-        eeg_file_names = sorted(glob.glob(eeg_data_dir + "/preproc_ec/*/sub-*_preproc_raw.npy"))
-        meg_file_names = sorted(glob.glob(meg_data_dir + "/preproc/*task-rest_meg/*_preproc_raw.fif"))
-        meg_file_names = [
-            file for file in meg_file_names
-            if os.path.exists(meg_data_dir + "/src/sub-{}/sflip_parc.npy".format(file.split('_')[1].split('-')[1]))
-        ] # only include preprocessed files that have source reconsturcted data
-
-        # Select randomly subsampled subjects from MEG data
-        _, _, young_idx, old_idx = get_age_camcan(
-            meg_meta_dir, 
-            meg_file_names, 
-            data_space, 
-            return_indices=True,
-        )
-        young_idx, old_idx = random_subsample(
-            group_data=[young_idx, old_idx],
-            sample_size=[86, 29],
-            seed=2023,
-            verbose=True,
-        )
-        meg_file_names = [meg_file_names[i] for i in young_idx] + [meg_file_names[i] for i in old_idx]
+        eeg_file_names = []
+        for id in age_group_idx["eeg"]["subject_young"] + age_group_idx["eeg"]["subject_old"]:
+            eeg_file_names.append(eeg_data_dir + f"/preproc_ec/{id}/{id}_preproc_raw.npy")
+        meg_file_names = []
+        for id in age_group_idx["meg"]["subject_young"] + age_group_idx["meg"]["subject_old"]:
+            meg_file_names.append(meg_data_dir + f"/preproc/mf2pt2_{id}_ses-rest_task-rest_meg/mf2pt2_{id}_ses-rest_task-rest_meg_preproc_raw.fif")
+        # NOTE: Only preprocessed data of subjects with corresponding source reconsturcted data will 
+        #       be included here.
 
         # Build training data
         eeg_data = data.Data(eeg_file_names, store_dir=TMP_DIR)
         meg_data = data.Data(meg_file_names, picks=["meg"], reject_by_annotation='omit', store_dir=TMP_DIR)
+
+    # Validation
+    if len(eeg_file_names) != len(meg_file_names):
+        raise ValueError("number of subjects in each dataset should be same.")
 
     # Get data lengths
     Fs = 250 # sampling frequency    
@@ -104,7 +88,7 @@ if __name__ == "__main__":
     ))
 
     print(f"Mean data length ratio of EEG to MEG: {np.mean(eeg_data_len) / np.mean(meg_data_len)}")
-    # NOTE: Ideally, the sensor and source data will output identical results.
+    # NOTE: Ideally, the sensor and source data should output identical results.
 
     # Clean up
     eeg_data.delete_dir()

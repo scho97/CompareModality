@@ -16,7 +16,7 @@ if __name__ == "__main__":
     PROJECT_DIR = "/well/woolrich/projects"
     eeg_data_dir = PROJECT_DIR + "/lemon/scho23"
     eeg_meta_dir = PROJECT_DIR + "/lemon/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
-    meg_data_dir = PROJECT_DIR + "/camcan/winter23"
+    meg_data_dir = PROJECT_DIR + "/camcan/scho23"
     meg_meta_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
     SAVE_DIR = "/well/woolrich/users/olt015/CompareModality/results/data"
 
@@ -26,14 +26,20 @@ if __name__ == "__main__":
     # Get subject ages and indices
     eeg_file_names = sorted(glob.glob(eeg_data_dir + "/src_ec/*/sflip_parc-raw.npy"))
     eeg_ages_y, eeg_ages_o, eeg_idx_y, eeg_idx_o = data.get_age_lemon(eeg_meta_dir, eeg_file_names, return_indices=True)
-    meg_file_names = sorted(glob.glob(meg_data_dir + "/src/*/sflip_parc.npy"))
+    meg_file_names = sorted(glob.glob(meg_data_dir + "/src/*/sflip_parc-raw.fif"))
     meg_ages_y, meg_ages_o, meg_idx_y, meg_idx_o = data.get_age_camcan(meg_meta_dir, meg_file_names, return_indices=True)
 
+    # Validation
+    if len(np.unique(eeg_idx_y + eeg_idx_o)) != len(eeg_idx_y) + len(eeg_idx_o):
+        raise ValueError("same subject is included more than once (EEG LEMON).")
+    if len(np.unique(meg_idx_y + meg_idx_o)) != len(meg_idx_y) + len(meg_idx_o):
+        raise ValueError("same subject is included more than once (MEG CamCAN).")
+
     # Match age distributions of young participants
-    #   NOTE: For 20-25, MEG (n=14) < EEG (n=39); for MEG, the upper bound was 24.
+    #   NOTE: For 20-25, MEG (n=14) < EEG (n=43); for MEG, the upper bound was 24.
     #         For 25-30, MEG (n=45) > EEG (n=39); for MEG, the upper bound was 29.
-    #         For 30-35, MEG (n=50) > EEG (n=8).
-    #         We select 14 subjects from EEG, 39 subjects from MEG, and 8 subjects from MEG, respectively.
+    #         For 30-35, MEG (n=50) > EEG (n=7).
+    #         We select 14 subjects from EEG, 39 subjects from MEG, and 7 subjects from MEG, respectively.
 
     # [1] Match EEG
     eeg_y_bel_25 = np.concatenate(list(data.random_subsample(
@@ -94,6 +100,18 @@ if __name__ == "__main__":
     meg_ages_o = meg_old_info[:, 0]
     meg_idx_o = meg_old_info[:, 1]
 
+    # Get subject IDs
+    def get_subject_ids(filenames, idx_list):
+        id_list = []
+        for idx in idx_list:
+            id_list.append(filenames[idx].split("/")[-2])
+        return id_list
+
+    eeg_subjects_y = get_subject_ids(eeg_file_names, eeg_idx_y)
+    eeg_subjects_o = get_subject_ids(eeg_file_names, eeg_idx_o)
+    meg_subjects_y = get_subject_ids(meg_file_names, meg_idx_y)
+    meg_subjects_o = get_subject_ids(meg_file_names, meg_idx_o)
+
     # Save subject ages and indices
     output = {
         "eeg": {
@@ -101,12 +119,16 @@ if __name__ == "__main__":
             "age_old": eeg_ages_o,
             "index_young": eeg_idx_y,
             "index_old": eeg_idx_o,
+            "subject_young": eeg_subjects_y,
+            "subject_old": eeg_subjects_o,
         },
         "meg": {
             "age_young": meg_ages_y,
             "age_old": meg_ages_o,
             "index_young": meg_idx_y,
             "index_old": meg_idx_o,
+            "subject_young": meg_subjects_y,
+            "subject_old": meg_subjects_o,
         },
     }
     with open(os.path.join(SAVE_DIR, "age_group_idx.pkl"), "wb") as save_path:
