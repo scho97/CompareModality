@@ -17,15 +17,14 @@ if __name__ == "__main__":
     print(f"[INFO] Modality: {modality.upper()} | Data Space: {data_space} | Frequency Band: {band_name} ({frequency_band[0]}-{frequency_band[1]} Hz)")
 
     # Set directory paths
+    BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results"
     PROJECT_DIR = "/well/woolrich/projects"
     if modality == "eeg":
         dataset_dir = PROJECT_DIR + "/lemon/scho23"
-        metadata_dir = PROJECT_DIR + "/lemon/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
     elif modality == "meg":
-        dataset_dir = PROJECT_DIR + "/camcan/winter23"
-        metadata_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
-    BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/static"
-    SAVE_DIR = os.path.join(BASE_DIR, f"{modality}/aec_{data_space}_{band_name}")
+        dataset_dir = PROJECT_DIR + "/camcan/scho23"
+    groupinfo_dir = os.path.join(BASE_DIR, "data/age_group_idx.pkl")
+    SAVE_DIR = os.path.join(BASE_DIR, f"static/{modality}/aec_{data_space}_{band_name}")
     TMP_DIR = os.path.join(SAVE_DIR, "tmp")
     os.makedirs(SAVE_DIR, exist_ok=True)
     os.makedirs(TMP_DIR, exist_ok=True)
@@ -34,7 +33,7 @@ if __name__ == "__main__":
     print("Computing first-level AEC ...")
     conn_map, conn_map_y, conn_map_o = compute_aec(
         dataset_dir=dataset_dir,
-        metadata_dir=metadata_dir,
+        groupinfo_dir=groupinfo_dir,
         data_space=data_space,
         modality=modality,
         sampling_frequency=250,

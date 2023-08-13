@@ -3,16 +3,13 @@
 """
 
 import os
-import glob
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from osl_dynamics import analysis
 from osl_dynamics.analysis import power
 from osl_dynamics.data import Data
 from osl_dynamics.analysis import static
-from .data import (get_group_idx_lemon,
-                   get_group_idx_camcan,
-                   random_subsample)
 
 ##################
 ##     PSDs     ##
@@ -146,7 +143,7 @@ class SubjectStaticPowerMap():
 ####################
 
 def compute_aec(dataset_dir, 
-                metadata_dir, 
+                groupinfo_dir, 
                 data_space, 
                 modality, 
                 sampling_frequency, 
@@ -159,7 +156,7 @@ def compute_aec(dataset_dir,
     ----------
     dataset_dir : str
         Path to the data measurements.
-    metadata_dir : str
+    groupinfo_dir : str
         Path to the data containing participant information.
     data_space : str
         Data measurement space. Should be either "sensor" or "source".
@@ -184,59 +181,64 @@ def compute_aec(dataset_dir,
         `conn_map` for old participants.
     """
     
+    # Load group information
+    with open(groupinfo_dir, "rb") as input_path:
+        age_group_idx = pickle.load(input_path)
+    input_path.close()
+    subject_ids = age_group_idx[modality]["subject_young"] + age_group_idx[modality]["subject_old"]
+    n_young = len(age_group_idx[modality]["age_young"])
+    n_old = len(age_group_idx[modality]["age_old"])
+
     # Load data
-    if data_space == "source":
-        if modality == "eeg":
-            file_names = sorted(glob.glob(dataset_dir + "/src_ec/*/sflip_parc-raw.npy"))
-        if modality == "meg":
-            file_names = sorted(glob.glob(dataset_dir + "/src/*/sflip_parc.npy"))
-        training_data = Data(file_names, store_dir=tmp_dir)
-    elif data_space == "sensor":
-        if modality == "eeg":
-            file_names = sorted(glob.glob(dataset_dir + "/preproc_ec/*/sub-*_preproc_raw.npy"))
-            training_data = Data(file_names, store_dir=tmp_dir)
-        if modality == "meg":
-            file_names = sorted(glob.glob(dataset_dir + "/preproc/*task-rest_meg/*_preproc_raw.fif"))
-            file_names = [file for file in file_names if os.path.exists(dataset_dir + "/src/sub-{}/sflip_parc.npy".format(file.split('_')[1].split('-')[1]))]
-            training_data = Data(file_names, picks=[modality], reject_by_annotation='omit', store_dir=tmp_dir)
-    
-    # Get indices of young and old participatns
+    file_names = []    
+    for id in subject_ids:
+        if data_space == "source":        
+            if modality == "eeg":
+                file_path = os.path.join(dataset_dir, f"src_ec/{id}/sflip_parc-raw.npy")
+            if modality == "meg":
+                pick_name = "misc"
+                file_path = os.path.join(dataset_dir, f"src/{id}/sflip_parc-raw.fif")
+        elif data_space == "sensor":
+            if modality == "eeg":
+                file_path = os.path.join(dataset_dir, f"preproc_ec/{id}/{id}_preproc_raw.npy")
+            if modality == "meg":
+                pick_name = modality
+                file_path = os.path.join(dataset_dir, f"preproc/mf2pt2_{id}_ses-rest_task-rest_meg/mf2pt2_{id}_ses-rest_task-rest_meg_preproc_raw.fif")
+        file_names.append(file_path)
+
+    # Build training data
     if modality == "eeg":
-        young_idx, old_idx = get_group_idx_lemon(metadata_dir, file_names)
+        training_data = Data(file_names, store_dir=tmp_dir)
     if modality == "meg":
-        young_idx, old_idx = get_group_idx_camcan(metadata_dir, file_names, data_space)
-        # Match sample size to EEG data
-        young_idx, old_idx = random_subsample(
-            group_data=[young_idx, old_idx],
-            sample_size=[86, 29],
-            seed=2023,
-            verbose=True,
-        )
-    
+        training_data = Data(file_names, picks=pick_name, reject_by_annotation="omit", store_dir=tmp_dir)
+
     # Separate data into groups
-    input_data = [x for x in training_data.subjects]
+    input_data = [x for x in training_data.arrays]
     if input_data[0].shape[0] < input_data[0].shape[1]:
         print("Reverting dimension to (samples x parcels)")
         input_data = [x.T for x in input_data]
-    input_young = [input_data[i] for i in young_idx]
-    input_old = [input_data[i] for i in old_idx]
-    input_data = input_young + input_old
     n_subjects = len(input_data)
     print("Total # of channels/parcels: ", input_data[0].shape[1])
-    print("Processed {} subjects: {} young, {} old ... ".format(n_subjects, len(input_young), len(input_old)))
-    print("Shape of the single subject input data: ", np.shape(input_young[0]))
+    print("Processed {} subjects: {} young, {} old ... ".format(n_subjects, n_young, n_old))
+    print("Shape of the single subject input data: ", np.shape(input_data[0]))
     data = Data(input_data, store_dir=tmp_dir, sampling_frequency=sampling_frequency)
 
     # Prepare data to compute amplitude envelope
-    data.prepare(low_freq=freq_range[0], high_freq=freq_range[1], amplitude_envelope=True)
+    data.prepare(
+        methods = {
+            "filter": {"low_freq": freq_range[0], "high_freq": freq_range[1]},
+            "amplitude_envelope": {},
+            "standardize": {},
+        }
+    )
     ts = data.time_series()
 
     # Calculate functional connectivity using AEC
     conn_map = static.functional_connectivity(ts, conn_type="corr")
 
     # Get AEC by young and old participant groups
-    conn_map_y = static.functional_connectivity(ts[:len(input_young)], conn_type="corr")
-    conn_map_o = static.functional_connectivity(ts[len(input_young):], conn_type="corr")
+    conn_map_y = static.functional_connectivity(ts[:n_young], conn_type="corr")
+    conn_map_o = static.functional_connectivity(ts[n_young:], conn_type="corr")
 
     # Clean up
     training_data.delete_dir()
