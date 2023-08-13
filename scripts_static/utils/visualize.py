@@ -231,33 +231,28 @@ def plot_surfaces(
     parcellation_file = files.check_exists(
         parcellation_file, files.parcellation.directory
     )
-    data_map = data_map[np.newaxis, ...] # add dimension for `power_map_grid()`
 
     # Calculate data map grid
-    data_map = power.power_map_grid(mask_file, parcellation_file, data_map)
+    data_map = power.parcel_vector_to_voxel_grid(mask_file, parcellation_file, data_map)
 
     # Load the mask
     mask = nib.load(mask_file)
 
-    # Number of modes
-    n_modes = data_map.shape[-1]
-
     # Plot the surface map
-    for i in trange(n_modes, desc="Saving images"):
-        nii = nib.Nifti1Image(data_map[:, :, :, i], mask.affine, mask.header)
-        plot_glass_brain(
-            nii,
-            output_file=None,
-            display_mode='z',
-            colorbar=False,
-            figure=figure,
-            axes=axis,
-            cmap=plt.cm.Spectral_r,
-            alpha=0.9,
-            vmin=vmin,
-            vmax=vmax,
-            plot_abs=False,
-        )
+    nii = nib.Nifti1Image(data_map, mask.affine, mask.header)
+    plot_glass_brain(
+        nii,
+        output_file=None,
+        display_mode='z',
+        colorbar=False,
+        figure=figure,
+        axes=axis,
+        cmap=plt.cm.Spectral_r,
+        alpha=0.9,
+        vmin=vmin,
+        vmax=vmax,
+        plot_abs=False,
+    )
 
     return None
     
