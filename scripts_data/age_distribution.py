@@ -19,6 +19,7 @@ if __name__ == "__main__":
     meg_data_dir = PROJECT_DIR + "/camcan/scho23"
     meg_meta_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
     SAVE_DIR = "/well/woolrich/users/olt015/CompareModality/results/data"
+    os.makedirs(SAVE_DIR, exist_ok=True)
 
     # Set random seed number
     n_seed = 2023

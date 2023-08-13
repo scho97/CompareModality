@@ -24,11 +24,12 @@ if __name__ == "__main__":
 
     # Set directory paths
     PROJECT_DIR = "/well/woolrich/projects"
-    SAVE_DIR = "/well/woolrich/users/olt015/CompareModality/results/data"
-    TMP_DIR = os.path.join(SAVE_DIR, "tmp")
     eeg_data_dir = PROJECT_DIR + "/lemon/scho23"
     meg_data_dir = PROJECT_DIR + "/camcan/scho23"
     meg_meta_dir = PROJECT_DIR + "/camcan/cc700/meta/participants.tsv"
+    SAVE_DIR = "/well/woolrich/users/olt015/CompareModality/results/data"
+    TMP_DIR = os.path.join(SAVE_DIR, "tmp")
+    os.makedirs(SAVE_DIR, exist_ok=True)
 
     # Load group information
     with open(os.path.join(SAVE_DIR, "age_group_idx.pkl"), "rb") as input_path:
