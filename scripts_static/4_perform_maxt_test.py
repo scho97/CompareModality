@@ -205,7 +205,7 @@ if __name__ == "__main__":
         new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
         cb_ax.set_position(new_pos)
         cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
-        cb_ax.tick_params(labelsize=18)
+        cb_ax.tick_params(labelsize=24)
         fig.savefig(os.path.join(SAVE_DIR, "map_tscore.png"))
         plt.close(fig)
 
@@ -233,7 +233,7 @@ if __name__ == "__main__":
         new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
         cb_ax.set_position(new_pos)
         cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
-        cb_ax.tick_params(labelsize=18)
+        cb_ax.tick_params(labelsize=24)
         fig.savefig(savename)
         plt.close(fig)
 
