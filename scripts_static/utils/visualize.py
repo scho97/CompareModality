@@ -8,14 +8,15 @@ import numpy as np
 import nibabel as nib
 import matplotlib
 import matplotlib.pyplot as plt
-from tqdm.auto import trange
-from utils import min_max_scale
 from osl_dynamics import files, analysis
 from osl_dynamics.analysis import power
 from osl_dynamics.utils import plotting
 from osl_dynamics.utils.parcellation import Parcellation
 from nilearn.plotting import plot_markers, plot_glass_brain
 from matplotlib.colors import LinearSegmentedColormap, Normalize
+from utils import (min_max_scale,
+                   round_nonzero_decimal,
+                   round_up_half)
 
 def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data_space="source", modality=None, plot_kwargs=None):
     """Plot group-level power maps. For sensor data, a topographical map
@@ -94,13 +95,23 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
         new_pos = [pos.x0 * 0.92, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
         cb_ax.set_position(new_pos)
     
+    # Edit colorbar ticks
+    if np.any(np.abs(np.array(cb_ax.get_xlim())) < 1):
+        hmin = round_nonzero_decimal(cb_ax.get_xlim()[0], method="ceil") # ceiling for negative values
+        hmax = round_nonzero_decimal(cb_ax.get_xlim()[1], method="floor") # floor for positive values
+        cb_ax.set_xticks(np.array([hmin, 0, hmax]))
+    else:
+        cb_ax.set_xticks(
+            [round_up_half(val) for val in cb_ax.get_xticks()[1:-1]]
+        )
+
     # Set colorbar styles
     cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 4))
-    cb_ax.tick_params(labelsize=18)
-    cb_ax.xaxis.offsetText.set_fontsize(18)
+    cb_ax.tick_params(labelsize=24)
+    cb_ax.xaxis.offsetText.set_fontsize(24)
 
     # Save figure
-    fig.savefig(filename)
+    fig.savefig(filename, bbox_inches="tight")
     plt.close(fig)
 
     return None
