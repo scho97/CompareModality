@@ -11,7 +11,6 @@ from sys import argv
 from osl_dynamics import data
 from osl_dynamics.inference import tf_ops
 from osl_dynamics.models.hmm import Config, Model
-from utils.data import get_group_idx_camcan, random_subsample
 
 
 if __name__ == "__main__":
@@ -28,14 +27,16 @@ if __name__ == "__main__":
     # Set up GPU
     tf_ops.gpu_growth()
 
-    # Define output ID
-    output_id = f"run{run}"
+    # Set output direcotry path
+    BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results"
+    output_dir = f"{BASE_DIR}/dynamic/camcan/hmm/run{run}"
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Set output directory paths
-    analysis_dir = f"{output_id}/analysis"
-    model_dir = f"{output_id}/model"
-    maps_dir = f"{output_id}/maps"
-    tmp_dir = f"{output_id}/tmp"
+    # Set output sub-directory paths
+    analysis_dir = f"{output_dir}/analysis"
+    model_dir = f"{output_dir}/model"
+    maps_dir = f"{output_dir}/maps"
+    tmp_dir = f"{output_dir}/tmp"
     save_dir = f"{model_dir}/results"
     os.makedirs(analysis_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
@@ -61,26 +62,24 @@ if __name__ == "__main__":
     print("Step 2 - Preparing training dataset ...")
 
     # Load data
-    dataset_dir = "/well/woolrich/projects/camcan/winter23/src"
-    file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc.npy"))
+    dataset_dir = "/well/woolrich/projects/camcan/scho23/src"
+    file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.fif"))
 
     # Match sample size with EEG LEMON
-    metadata_dir = "/well/woolrich/projects/camcan/cc700/meta/participants.tsv"
-    young_idx, old_idx = get_group_idx_camcan(metadata_dir, file_names, data_space="source")
-    young_idx, old_idx = random_subsample(
-        group_data=[young_idx, old_idx],
-        sample_size=[86, 29],
-        seed=2023,
-        verbose=True,
-    )
-    file_names = sorted(
-        [file_names[i] for i in young_idx] + [file_names[i] for i in old_idx]
-    )
-    subject_ids = [file.split('/')[-2] for file in file_names]
+    with open(os.path.join(BASE_DIR, "data/age_group_idx.pkl"), "rb") as input_path:
+        age_group_idx = pickle.load(input_path)
+    input_path.close()
+    subject_idx = np.concatenate((age_group_idx["meg"]["index_young"], age_group_idx["meg"]["index_old"]))
+    file_names = [file_names[i] for i in subject_idx]
+    print(f"Total number of subjects available: {len(file_names)}")
 
     # Prepare the data for training
-    training_data = data.Data(file_names, store_dir=tmp_dir)
-    training_data.prepare(n_embeddings=15, n_pca_components=config.n_channels)
+    training_data = data.Data(file_names, picks=["misc"], reject_by_annotation="omit", store_dir=tmp_dir)
+    prepare_config = {
+        "tde_pca": {"n_embeddings": 15, "n_pca_components": config.n_channels},
+        "standardize": {},
+    }
+    training_data.prepare(methods=prepare_config)
 
     # ------------ [3] ------------- #
     #      Build the HMM model       #
@@ -122,10 +121,10 @@ if __name__ == "__main__":
     tp = model.get_trans_prob() # inferred transition probability matrices
     cov = model.get_covariances() # inferred covariances
     ts = model.get_training_time_series(training_data, prepared=False) # subject-specific training data
-
+    
     print("Final loss: ", loss[-1])
     print("Free energy: ", free_energy)
-
+    
     # Save results
     outputs = {
         "loss": loss,
@@ -135,7 +134,6 @@ if __name__ == "__main__":
         "covariance": cov,
         "training_time_series": ts,
         "n_embeddings": training_data.n_embeddings,
-        "subject_ids": subject_ids,
     }
 
     with open(save_dir + "/camcan_hmm.pkl", "wb") as output_path:
