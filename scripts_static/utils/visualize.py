@@ -675,7 +675,7 @@ class GroupPSDDifference():
             cb = plt.colorbar(matplotlib.cm.ScalarMappable(norm=cnorm_top, cmap=cmap), cax=cb_ax, orientation='vertical')
         cb.ax.set_yticks([vmin_top, 0, vmax_top])
         cb.ax.set_ylabel("PSD (a.u.)", fontsize=12)
-        cb.ax.ticklabel_format(style='scientific', axis='y', scilimits=(-1, 6))
+        cb.ax.ticklabel_format(style='scientific', axis='y', scilimits=(-2, 4))
 
         # Add manual colorbar for topographies at the bottom
         cb_ax = ax.inset_axes([0.78, -0.38, 0.03, 0.22])
@@ -687,14 +687,14 @@ class GroupPSDDifference():
             cb = plt.colorbar(matplotlib.cm.ScalarMappable(norm=cnorm_bottom, cmap=cmap), cax=cb_ax, orientation='vertical')
         cb.ax.set_yticks([vmin_bottom, 0, vmax_bottom])
         cb.ax.set_ylabel("PSD (a.u.)", fontsize=12)
-        cb.ax.ticklabel_format(style='scientific', axis='y', scilimits=(-1, 6))
+        cb.ax.ticklabel_format(style='scientific', axis='y', scilimits=(-2, 4))
 
         # Set labels
         ax.set_xlabel('Frequency (Hz)', fontsize=14)
         ax.set_ylabel('PSD $\Delta$ (Old - Young) (a.u.)', fontsize=14)
         ax.set_xlim([0, 46])
         ax.set_ylim(ylim)
-        ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
+        ax.ticklabel_format(style='scientific', axis='y', scilimits=(-2, 4))
 
         # Create manual legend
         if plot_legend:
