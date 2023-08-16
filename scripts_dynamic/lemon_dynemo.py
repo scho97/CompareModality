@@ -27,14 +27,16 @@ if __name__ == "__main__":
     # Set up GPU
     tf_ops.gpu_growth()
 
-    # Define output ID
-    output_id = f"run{run}"
+    # Set output direcotry path
+    BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results"
+    output_dir = f"{BASE_DIR}/dynamic/lemon/dynemo/run{run}"
+    os.makedirs(output_dir, exist_ok=True)
 
-    # Set output directory paths
-    analysis_dir = f"{output_id}/analysis"
-    model_dir = f"{output_id}/model"
-    maps_dir = f"{output_id}/maps"
-    tmp_dir = f"{output_id}/tmp"
+    # Set output sub-directory paths
+    analysis_dir = f"{output_dir}/analysis"
+    model_dir = f"{output_dir}/model"
+    maps_dir = f"{output_dir}/maps"
+    tmp_dir = f"{output_dir}/tmp"
     save_dir = f"{model_dir}/results"
     os.makedirs(analysis_dir, exist_ok=True)
     os.makedirs(model_dir, exist_ok=True)
@@ -72,9 +74,21 @@ if __name__ == "__main__":
     dataset_dir = "/well/woolrich/projects/lemon/scho23/src_ec"
     file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.npy"))
 
+    # Match sample size with MEG CamCAN
+    with open(os.path.join(BASE_DIR, "data/age_group_idx.pkl"), "rb") as input_path:
+        age_group_idx = pickle.load(input_path)
+    input_path.close()
+    subject_idx = np.concatenate((age_group_idx["eeg"]["index_young"], age_group_idx["eeg"]["index_old"]))
+    file_names = [file_names[i] for i in subject_idx]
+    print(f"Total number of subjects available: {len(file_names)}")
+
     # Prepare the data for training
     training_data = data.Data(file_names, store_dir=tmp_dir)
-    training_data.prepare(n_embeddings=15, n_pca_components=config.n_channels)
+    prepare_config = {
+        "tde_pca": {"n_embeddings": 15, "n_pca_components": config.n_channels},
+        "standardize": {},
+    }
+    training_data.prepare(methods=prepare_config)
 
     # ------------ [3] ------------- #
     #      Build the HMM model       #
