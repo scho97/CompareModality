@@ -53,6 +53,7 @@ if __name__ == "__main__":
         parcellation_file=parcellation_file,
         data_space=data_space,
         modality=modality,
+        fontsize=20,
         plot_kwargs={"vmax": hmax},
     )
     plot_group_power_map(
@@ -62,6 +63,7 @@ if __name__ == "__main__":
         parcellation_file=parcellation_file,
         data_space=data_space,
         modality=modality,
+        fontsize=20,
         plot_kwargs={"vmax": hmax}
     )
     plot_group_power_map(

@@ -18,7 +18,16 @@ from utils import (min_max_scale,
                    round_nonzero_decimal,
                    round_up_half)
 
-def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data_space="source", modality=None, plot_kwargs=None):
+def plot_group_power_map(
+        power_map,
+        filename,
+        mask_file,
+        parcellation_file,
+        data_space="source",
+        modality=None,
+        fontsize=24,
+        plot_kwargs=None
+    ):
     """Plot group-level power maps. For sensor data, a topographical map
     (using magnetometer channels) is saved. For source data, a surface
     map is saved.
@@ -39,6 +48,8 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
     modality : str
         Modality of the input data. Should be either "eeg" or "meg".
         Defaults to None, but required for sensor data.
+    fontsize : int
+        Fontsize for a power map colorbar. Defaults to 24.
     plot_kwargs : dict
         Keyword arguments to pass to `nilearn.plotting.plot_img_on_surf`.
         Currently, only supported when data_space is "source".
@@ -107,8 +118,8 @@ def plot_group_power_map(power_map, filename, mask_file, parcellation_file, data
 
     # Set colorbar styles
     cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 4))
-    cb_ax.tick_params(labelsize=24)
-    cb_ax.xaxis.offsetText.set_fontsize(24)
+    cb_ax.tick_params(labelsize=fontsize)
+    cb_ax.xaxis.offsetText.set_fontsize(fontsize)
 
     # Save figure
     fig.savefig(filename, bbox_inches="tight")
