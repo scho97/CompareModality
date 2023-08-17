@@ -118,6 +118,9 @@ def plot_group_power_map(
 
     # Set colorbar styles
     cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 4))
+    cb_xticks = cb_ax.get_xticks()
+    if (cb_xticks[-1] >= 0.1) and (cb_xticks[-1] < 1):
+        cb_ax.set_xticklabels([str(xt) if xt != 0 else "0" for xt in cb_xticks])
     cb_ax.tick_params(labelsize=fontsize)
     cb_ax.xaxis.offsetText.set_fontsize(fontsize)
 
