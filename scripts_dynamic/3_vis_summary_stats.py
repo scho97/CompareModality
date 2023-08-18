@@ -3,15 +3,12 @@
 """
 
 # Set up dependencies
-import os, glob, pickle
+import os, pickle
 import numpy as np
 import seaborn as sns
 from sys import argv
 from osl_dynamics.inference import modes
-from utils.data import (get_dynemo_mtc, 
-                        get_group_idx_lemon, 
-                        get_group_idx_camcan,
-                        load_order)
+from utils.data import get_dynemo_mtc, load_order
 from utils.statistics import group_diff_max_stat_perm
 from utils.visualize import plot_grouped_violin
 
@@ -39,7 +36,6 @@ if __name__ == "__main__":
 
     # Define training hyperparameters
     Fs = 250 # sampling frequency
-    n_subjects = 115 # number of subjects
     n_channels = 80 # number of channels
     if model_type == "hmm":
         n_class = 8 # number of states
@@ -52,8 +48,8 @@ if __name__ == "__main__":
     else: data_name = "camcan"
 
     # Set up directories
-    BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/dynamic"
-    DATA_DIR = os.path.join(BASE_DIR, f"{data_name}/{model_type}/{run_dir}")
+    BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results"
+    DATA_DIR = os.path.join(BASE_DIR, f"dynamic/{data_name}/{model_type}/{run_dir}")
 
     # Load data
     with open(os.path.join(DATA_DIR, f"model/results/{data_name}_{model_type}.pkl"), "rb") as input_path:
@@ -61,31 +57,20 @@ if __name__ == "__main__":
     alpha = data["alpha"]
     cov = data["covariance"]
     ts = data["training_time_series"]
-    if modality == "meg":
-        subj_ids = data["subject_ids"]
 
-    # Select young & old participants
-    PROJECT_DIR = f"/well/woolrich/projects/{data_name}"
-    if modality == "eeg":
-        dataset_dir = PROJECT_DIR + "/scho23/src_ec"
-        metadata_dir = PROJECT_DIR + "/raw/Behavioural_Data_MPILMBB_LEMON/META_File_IDs_Age_Gender_Education_Drug_Smoke_SKID_LEMON.csv"
-        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc-raw.npy"))
-        young_idx, old_idx = get_group_idx_lemon(metadata_dir, file_names)
-    if modality == "meg":
-        dataset_dir = PROJECT_DIR + "/winter23/src"
-        metadata_dir = PROJECT_DIR + "/cc700/meta/participants.tsv"
-        file_names = sorted(glob.glob(dataset_dir + "/*/sflip_parc.npy"))
-        young_idx, old_idx = get_group_idx_camcan(metadata_dir, subj_ids=subj_ids)
-    print("Total {} subjects | Young: {} | Old: {}".format(
-        n_subjects, len(young_idx), len(old_idx),
-    ))
-    print("Young Index: ", young_idx)
-    print("Old Index: ", old_idx)
+    # Load group information
+    with open(os.path.join(BASE_DIR, "data/age_group_idx.pkl"), "rb") as input_path:
+        age_group_idx = pickle.load(input_path)
+    input_path.close()
+    n_young = len(age_group_idx[modality]["age_young"])
+    n_old = len(age_group_idx[modality]["age_old"])
+    n_subjects = n_young + n_old
+    print("Total {} subjects | Young: {} | Old: {}".format(n_subjects, n_young, n_old))
 
     # Define group assignments
     group_assignments = np.zeros((n_subjects,))
-    group_assignments[old_idx] = 1
-    group_assignments[young_idx] = 2
+    group_assignments[n_young:] = 1 # old participants
+    group_assignments[:n_young] = 2 # young participants
 
     # Exclude specified outliers
     if catch_outlier:
