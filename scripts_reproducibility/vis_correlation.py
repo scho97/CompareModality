@@ -1,5 +1,5 @@
 """Visualize correlations between matched state/mode time courses
-
+   of the reference runs
 """
 
 # Set up dependencies
@@ -12,14 +12,16 @@ from utils import plot_correlations, load_order
 if __name__ == "__main__":
     # Set hyperparameters
     run_ids = {
-        "eeg": {"hmm": "run15_hmm", "dynemo": "run20_dynemo"},
-        "meg": {"hmm": "run96_hmm", "dynemo": "run14_dynemo"},
+        "eeg": {"hmm": "run39_hmm", "dynemo": "run30_dynemo"},
+        "meg": {"hmm": "run41_hmm", "dynemo": "run75_dynemo"},
     }
 
     # Set directories
     BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results"
     DATA_DIR = os.path.join(BASE_DIR, "dynamic")
     SAVE_DIR = os.path.join(BASE_DIR, "reproducibility")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(SAVE_DIR, exist_ok=True)
 
     # Load data
     time_course = dict(eeg = dict(hmm = [], dynemo = []),
@@ -39,6 +41,7 @@ if __name__ == "__main__":
                 tc = modes.argmax_time_courses(tc)
             order = load_order(run_ids[mod][mdl], mod)
             if order is not None:
+                print("Reordering reference state/mode time courses ...")
                 tc = [arr[:, order] for arr in tc]
             time_course[mod][mdl] = tc
 

@@ -77,6 +77,8 @@ def plot_correlations(data1, data2, filename, colormap="coolwarm"):
     )
     ax.tick_params(labelsize=14, bottom=False, right=False)
     im.colorbar.ax.tick_params(labelsize=14)
+    im.colorbar.ax.ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
+    im.colorbar.ax.yaxis.offsetText.set_fontsize(14)
     cbar_pos = im.colorbar.ax.get_position()
     im.colorbar.ax.set_position(
         Bbox([[cbar_pos.x0 - 0.05, cbar_pos.y0], [cbar_pos.x1 - 0.05, cbar_pos.y1]])
