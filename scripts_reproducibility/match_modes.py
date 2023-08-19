@@ -22,7 +22,7 @@ if __name__ == "__main__":
     LEMON_DIR = os.path.join(BASE_DIR, "lemon")
     CAMCAN_DIR = os.path.join(BASE_DIR, "camcan")
 
-    # Load data
+    # Load data of the best runs
     def load_data(data_dir, run_id):
         # Get model type
         model_type = run_id.split('_')[-1]
@@ -35,10 +35,10 @@ if __name__ == "__main__":
         input_path.close()
         return run_data
 
-    lemon_hmm = load_data(LEMON_DIR, "run6_hmm")
-    lemon_dynemo = load_data(LEMON_DIR, "run2_dynemo")
-    camcan_hmm = load_data(CAMCAN_DIR, "run3_hmm")
-    camcan_dynemo = load_data(CAMCAN_DIR, "run0_dynemo")
+    lemon_hmm = load_data(LEMON_DIR, "run39_hmm")
+    lemon_dynemo = load_data(LEMON_DIR, "run30_dynemo")
+    camcan_hmm = load_data(CAMCAN_DIR, "run41_hmm")
+    camcan_dynemo = load_data(CAMCAN_DIR, "run75_dynemo")
 
     # Extract alphas
     lemon_hmm_alpha = lemon_hmm["alpha"]
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         print("\tShape of Dynemo mode time courses: ", np.shape(cat_camcan_dynemo))
 
     # [1] Align LEMON and CamCAN states
-    order1 = [6, 1, 3, 2, 5, 0, 4, 7] # matched by eye
+    order1 = [2, 3, 5, 1, 7, 6, 4, 0] # matched by eye
     print("LEMON STC -> CamCAN STC: ", order1)
     # NOTE: At the present stage, matching by eye is preferred when matching states
     # or modes across modalities due to underperformance of the exiting algorithms.

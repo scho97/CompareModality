@@ -31,11 +31,11 @@ if __name__ == "__main__":
     
     # Select reference
     if modality == "eeg":
-        if model_type == "hmm": ref_dir = "run6_hmm"
-        else: ref_dir = "run2_dynemo"
+        if model_type == "hmm": ref_dir = "run39_hmm"
+        else: ref_dir = "run30_dynemo"
     elif modality == "meg":
-        if model_type == "hmm": ref_dir = "run3_hmm"
-        else: ref_dir = "run0_dynemo"
+        if model_type == "hmm": ref_dir = "run41_hmm"
+        else: ref_dir = "run75_dynemo"
 
     # Set directories
     BASE_DIR = "/well/woolrich/users/olt015/CompareModality/results/dynamic"
@@ -83,12 +83,14 @@ if __name__ == "__main__":
     print("Matched order: ", order)
 
     # Plot correlations between the reference and target runs
-    savename = f"match_summary_{modality}_{model_type}_{run_id}.png"
-    if model_type == "hmm":
-        tar_stc = [stc[:, order] for stc in tar_stc]
-        plot_correlations(ref_stc, tar_stc, filename=savename)
-    if model_type == "dynemo":
-        tar_alpha = [alpha[:, order] for alpha in tar_alpha]
-        plot_correlations(ref_alpha, tar_alpha, filename=savename)
+    plot_verbose = True
+    if plot_verbose:
+        savename = f"match_summary_{modality}_{model_type}_{run_id}.png"
+        if model_type == "hmm":
+            tar_stc = [stc[:, order] for stc in tar_stc]
+            plot_correlations(ref_stc, tar_stc, filename=savename)
+        if model_type == "dynemo":
+            tar_alpha = [alpha[:, order] for alpha in tar_alpha]
+            plot_correlations(ref_alpha, tar_alpha, filename=savename)
     
     print("Matching complete.")
