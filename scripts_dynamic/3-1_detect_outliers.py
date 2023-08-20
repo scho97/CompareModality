@@ -8,14 +8,11 @@ so that they can be removed from the subsequent analyses for EEG DyNeMo.
 
 # Set up dependencies
 import os
-import glob
 import pickle
 import numpy as np
 from sys import argv
 from osl_dynamics.inference import modes
 from utils import (get_dynemo_mtc,
-                   get_group_idx_lemon,
-                   get_group_idx_camcan,
                    load_order,
                    detect_outliers)
 
