@@ -353,3 +353,46 @@ def load_order(run_dir, modality):
         order = None
     
     return order
+
+def load_outlier(run_dir, modality):
+    """Extract indices of subject outliers for a given run written 
+       on the excel sheet. These indices can be used to exclude the 
+       subjects from the analyses. Note that outliers are only relevant 
+       for EEG DyNeMo model runs.
+
+    Parameters
+    ----------
+    run_dir : str
+        Name of the directory containing the model run (e.g., "run6_hmm").
+    modality : str
+        Type of the modality. Should be either "eeg" or "meg".
+
+    Returns
+    -------
+    outlier : list of int
+        Subject outliers in the given model run. Shape is (n_outliers,).
+    """
+
+    # Define model type and run ID
+    model_type = run_dir.split("_")[-1]
+    run_id = int(run_dir.split("_")[0][3:])
+
+    # Validation
+    if (model_type != "dynemo") or (modality != "eeg"):
+        raise ValueError("outlier detection is relevant only for EEG DyNeMo runs.")
+    
+    # Get list of subject outlier index
+    BASE_DIR = "/well/woolrich/users/olt015/CompareModality"
+    df = pd.read_excel(os.path.join(BASE_DIR, "scripts_reproducibility/run_outliers.xlsx"))
+
+    # Extract the outliers of a given run
+    index = np.logical_and.reduce((
+        df.Modality == modality,
+        df.Model == model_type,
+        df.Run == run_id,
+    ))
+    outlier = df.Outlier[index].values[0]
+    convert_to_list = lambda x: [int(n) for n in x[1:-1].split(',')]
+    outlier = convert_to_list(outlier)
+
+    return outlier
