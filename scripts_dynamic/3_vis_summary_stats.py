@@ -8,7 +8,7 @@ import numpy as np
 import seaborn as sns
 from sys import argv
 from osl_dynamics.inference import modes
-from utils.data import get_dynemo_mtc, load_order
+from utils.data import get_dynemo_mtc, load_order, load_outlier
 from utils.statistics import group_diff_max_stat_perm
 from utils.visualize import plot_grouped_violin
 
@@ -26,9 +26,6 @@ if __name__ == "__main__":
     model_type = argv[2]
     run_id = argv[3]
     print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
-
-    catch_outlier = True
-    outlier_idx = [16, 100, 103, 107]
 
     # Get state/mode orders for the specified run
     run_dir = f"run{run_id}_{model_type}"
@@ -73,6 +70,9 @@ if __name__ == "__main__":
     group_assignments[:n_young] = 2 # young participants
 
     # Exclude specified outliers
+    if (modality == "eeg") and (model_type == "dynemo"):
+        catch_outlier = True
+        outlier_idx = load_outlier(run_dir, modality)
     if catch_outlier:
         print("Excluding subject outliers ...\n"
               "\tOutlier indices: ", outlier_idx)
