@@ -195,7 +195,7 @@ if __name__ == "__main__":
     conn_map = analysis.connectivity.mean_coherence_from_spectra(f, gcoh)
     edges = analysis.connectivity.threshold(
         conn_map,
-        percentile=95,
+        percentile=97,
         subtract_mean=True,
         mean_weights=gfo,
         return_edges=True,
