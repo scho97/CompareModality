@@ -12,7 +12,7 @@ from osl_dynamics import analysis
 from osl_dynamics.inference import modes
 from utils import visualize
 from utils.analysis import get_psd_coh
-from utils.data import divide_psd_by_age, load_order
+from utils.data import load_order, load_outlier
 
 
 if __name__ == "__main__":
@@ -28,9 +28,6 @@ if __name__ == "__main__":
     model_type = argv[2]
     run_id = argv[3]
     print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
-
-    catch_outlier = True
-    outlier_idx = [16, 100, 103, 107]
 
     # Get state/mode orders for the specified run
     run_dir = f"run{run_id}_{model_type}"
@@ -137,6 +134,9 @@ if __name__ == "__main__":
         )
 
     # Exclude specified outliers
+    if (modality == "eeg") and (model_type == "dynemo"):
+        catch_outlier = True
+        outlier_idx = load_outlier(run_dir, modality)
     if catch_outlier:
         print("Excluding subject outliers ...\n"
               "\tOutlier indices: ", outlier_idx)
@@ -217,33 +217,5 @@ if __name__ == "__main__":
         edges, f, psd,
         filename=os.path.join(DATA_DIR, "maps/conn_psd_whole.png"),
     )
-
-    # --------------- [5] ---------------- #
-    #      Between-group Differences       #
-    # ------------------------------------ #
-    print("Step 5 - Computing between-group differences in power maps (wide-band; 1-45 Hz) ...")
-
-    # Get PSDs and weights for each age group
-    psd_young, psd_old, w_young, w_old = divide_psd_by_age(psd, ts, group_idx=[young_idx, old_idx])
-    gpsd_young = np.average(psd_young, axis=0, weights=w_young)
-    gpsd_old = np.average(psd_old, axis=0, weights=w_old)
-    gpsd_diff = gpsd_old - gpsd_young # old vs. young
-    print("Shape of group-level PSDs: ", gpsd_diff.shape)
-
-    # Plot state/mode-specific power map between-group differences
-    sig_class = []
-    if not sig_class:
-        sig_class = np.arange(n_class)
-
-    for c in sig_class:
-        power_map_diff = analysis.power.variance_from_spectra(f, gpsd_diff[c])
-        visualize.plot_power_map(
-            power_map_diff,
-            mask_file,
-            parcellation_file,
-            subtract_mean=False,
-            mean_weights=None,
-            filename=os.path.join(DATA_DIR, f"maps/power_map_diff_{c}.png"),
-        )
 
     print("Analysis complete.")

@@ -12,7 +12,7 @@ from osl_dynamics import analysis
 from osl_dynamics.inference import modes
 from utils import visualize
 from utils.analysis import get_psd_coh
-from utils.data import load_order
+from utils.data import load_order, load_outlier
 
 
 if __name__ == "__main__":
@@ -28,9 +28,6 @@ if __name__ == "__main__":
     model_type = argv[2]
     run_id = argv[3]
     print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
-
-    catch_outlier = True
-    outlier_idx = [16, 100, 103, 107]
 
     # Get state/mode orders for the specified run
     run_dir = f"run{run_id}_{model_type}"
@@ -135,6 +132,9 @@ if __name__ == "__main__":
         )
 
     # Exclude specified outliers
+    if (modality == "eeg") and (model_type == "dynemo"):
+        catch_outlier = True
+        outlier_idx = load_outlier(run_dir, modality)
     if catch_outlier:
         print("Excluding subject outliers ...\n"
               "\tOutlier indices: ", outlier_idx)
@@ -180,34 +180,6 @@ if __name__ == "__main__":
     print("Step 4 - Analyzing spectral information ...")
 
     cluster_dimension = ["Frequency"]
-
-    # Cluster permutation test on PSDs
-    if model_type == "hmm":
-        input_psd = psd.copy()
-    if model_type == "dynemo":
-        input_psd = np.sum(psd, axis=1)
-
-    if len(cluster_dimension) == 2:
-        visualize.plot_mode_spectra_group_diff_3d(
-            f,
-            input_psd,
-            ts,
-            group_idx=[young_idx, old_idx],
-            parcellation_file=parcellation_file,
-            method=model_type,
-            bonferroni_ntest=n_class,
-            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png"),
-        )
-    else:
-        visualize.plot_mode_spectra_group_diff_2d(
-            f,
-            input_psd,
-            ts,
-            group_idx=[young_idx, old_idx],
-            method=model_type,
-            bonferroni_ntest=n_class,
-            filename=os.path.join(DATA_DIR, "analysis/psd_cluster.png"),
-        )
 
     # Cluster permutation test on PSDs (mean-subtracted)
     if model_type == "hmm":

@@ -13,7 +13,8 @@ from osl_dynamics.inference import modes
 from utils import (get_psd_coh,
                    group_diff_max_stat_perm,
                    plot_thresholded_map,
-                   load_order)
+                   load_order,
+                   load_outlier)
 
 
 if __name__ == "__main__":
@@ -29,9 +30,6 @@ if __name__ == "__main__":
    model_type = argv[2]
    run_id = argv[3]
    print(f"[INFO] Modality: {modality.upper()} | Model: {model_type.upper()} | Run: run{run_id}_{model_type}")
-
-   catch_outlier = True
-   outlier_idx = [16, 100, 103, 107]
 
    # Get state/mode orders for the specified run
    run_dir = f"run{run_id}_{model_type}"
@@ -129,6 +127,9 @@ if __name__ == "__main__":
       )
 
    # Exclude specified outliers
+   if (modality == "eeg") and (model_type == "dynemo"):
+        catch_outlier = True
+        outlier_idx = load_outlier(run_dir, modality)
    if catch_outlier:
       print("Excluding subject outliers ...\n"
               "\tOutlier indices: ", outlier_idx)
@@ -174,14 +175,12 @@ if __name__ == "__main__":
    coh_dynamic = coh - coh_static_mean
 
    # Compute power maps
-   power_map = analysis.power.variance_from_spectra(f, psd)
    power_map_dynamic = analysis.power.variance_from_spectra(f, psd_dynamic)
    # dim: (n_subjects, n_modes, n_parcels)
    power_map_static = analysis.power.variance_from_spectra(f, psd_static_mean)
    # dim: (n_subjects, n_parcels)
 
    # Compute connectivity maps
-   conn_map = analysis.connectivity.mean_coherence_from_spectra(f, coh)
    conn_map_dynamic = analysis.connectivity.mean_coherence_from_spectra(f, coh_dynamic)
    # dim: (n_subjects, n_modes, n_parcels, n_parcels)
    conn_map_static = analysis.connectivity.mean_coherence_from_spectra(f, coh_static_mean)
@@ -192,40 +191,13 @@ if __name__ == "__main__":
 
    # Preallocate output data
    map_statistics = {
-      "power": {"tstats": [], "pvalues": []},
       "power_dynamic": {"tstats": [], "pvalues": []},
       "power_static": {"tstats": [], "pvalues": []},
-      "connectivity": {"tstats": [], "pvalues": []},
       "connectivity_dynamic": {"tstats": [], "pvalues": []},
       "connectivity_static": {"tstats": [], "pvalues": []},
    }
    
    # Max-t permutation tests on the power maps
-   print("[Power] Running Max-t Permutation Test ...")
-   
-   for n in range(n_class):
-      _, tstats, pvalues = group_diff_max_stat_perm(
-         power_map[:, n, :],
-         group_assignments,
-         n_perm=10000,
-         metric="tstats",
-      )
-      pvalues *= bonferroni_ntest
-      plot_thresholded_map(
-         tstats,
-         pvalues,
-         map_type="power",
-         mask_file=mask_file,
-         parcellation_file=parcellation_file,
-         filenames=[
-            os.path.join(DATA_DIR, "maps", f"maxt_pow_map_{n}_{lbl}.png")
-            for lbl in ["unthr", "thr"]
-         ]
-      )
-      # Store test statistics
-      map_statistics["power"]["tstats"].append(tstats)
-      map_statistics["power"]["pvalues"].append(pvalues)
-
    print("[Power (mean-subtracted)] Running Max-t Permutation Test ...")
    
    for n in range(n_class):
@@ -276,44 +248,6 @@ if __name__ == "__main__":
    map_statistics["power_static"]["pvalues"].append(pvalues)
 
    # Max-t permutation tests on the connectivity maps
-   print("[Connectivity] Running Max-t Permutation Test ...")
-
-   for n in range(n_class):
-      # Vectorize an upper triangle of the connectivity matrix
-      n_parcels = conn_map.shape[-1]
-      i, j = np.triu_indices(n_parcels, 1) # excluding diagonals
-      conn_map_vec = conn_map[:, n, :, :]
-      conn_map_vec = conn_map_vec[:, i, j]
-      # dim: (n_subjects, n_connections)
-      _, tstats, pvalues = group_diff_max_stat_perm(
-         conn_map_vec,
-         group_assignments,
-         n_perm=10000,
-         metric="tstats",
-      )
-      pvalues *= bonferroni_ntest
-      plot_thresholded_map(
-         tstats,
-         pvalues,
-         map_type="connectivity",
-         mask_file=mask_file,
-         parcellation_file=parcellation_file,
-         filenames=[
-            os.path.join(DATA_DIR, "maps", f"maxt_conn_map_{n}_{lbl}.png")
-            for lbl in ["unthr", "thr"]
-         ]
-      )
-      # Store t-statistics
-      tstats_map = np.zeros((n_parcels, n_parcels))
-      tstats_map[i, j] = tstats
-      tstats_map += tstats_map.T
-      map_statistics["connectivity"]["tstats"].append(tstats_map)
-      # Store p-values
-      pvalues_map = np.zeros((n_parcels, n_parcels))
-      pvalues_map[i, j] = pvalues
-      pvalues_map += pvalues_map.T
-      map_statistics["connectivity"]["pvalues"].append(pvalues_map)
-
    print("[Connectivity (mean-subtracted)] Running Max-t Permutation Test ...")
 
    for n in range(n_class):
