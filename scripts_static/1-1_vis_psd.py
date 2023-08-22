@@ -115,7 +115,7 @@ if __name__ == "__main__":
         peaks_y,
         peaks_o,
         bonferroni_ntest=2, # n_test = n_data_space
-        test="wilcoxon",
+        test="ttest",
     )
     pval_lbl = categrozie_pvalue(pval)
     # NOTE: Make sure to check the assumptions first before specifying the statistical test.
