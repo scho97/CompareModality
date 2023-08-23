@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # Set hyperparameters
     run_ids = {
         "eeg": {"hmm": "run39_hmm", "dynemo": "run30_dynemo"},
-        "meg": {"hmm": "run41_hmm", "dynemo": "run75_dynemo"},
+        "meg": {"hmm": "run44_hmm", "dynemo": "run75_dynemo"},
     }
 
     # Set directories

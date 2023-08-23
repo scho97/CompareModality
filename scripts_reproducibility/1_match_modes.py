@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     lemon_hmm = load_data(LEMON_DIR, "run39_hmm")
     lemon_dynemo = load_data(LEMON_DIR, "run30_dynemo")
-    camcan_hmm = load_data(CAMCAN_DIR, "run41_hmm")
+    camcan_hmm = load_data(CAMCAN_DIR, "run44_hmm")
     camcan_dynemo = load_data(CAMCAN_DIR, "run75_dynemo")
 
     # Extract alphas
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         print("\tShape of Dynemo mode time courses: ", np.shape(cat_camcan_dynemo))
 
     # [1] Align LEMON and CamCAN states
-    order1 = [2, 3, 5, 1, 7, 6, 4, 0] # matched by eye
+    order1 = [0, 6, 2, 5, 7, 3, 4, 1] # matched by eye
     print("LEMON STC -> CamCAN STC: ", order1)
     # NOTE: At the present stage, matching by eye is preferred when matching states
     # or modes across modalities due to underperformance of the exiting algorithms.

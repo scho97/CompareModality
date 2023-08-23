@@ -34,7 +34,7 @@ if __name__ == "__main__":
         if model_type == "hmm": ref_dir = "run39_hmm"
         else: ref_dir = "run30_dynemo"
     elif modality == "meg":
-        if model_type == "hmm": ref_dir = "run41_hmm"
+        if model_type == "hmm": ref_dir = "run44_hmm"
         else: ref_dir = "run75_dynemo"
 
     # Set directories
