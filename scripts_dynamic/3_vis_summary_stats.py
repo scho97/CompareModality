@@ -70,10 +70,10 @@ if __name__ == "__main__":
     group_assignments[:n_young] = 2 # young participants
 
     # Exclude specified outliers
+    catch_outlier = False
     if (modality == "eeg") and (model_type == "dynemo"):
         catch_outlier = True
         outlier_idx = load_outlier(run_dir, modality)
-    if catch_outlier:
         print("Excluding subject outliers ...\n"
               "\tOutlier indices: ", outlier_idx)
         # Reorganize group assignments
