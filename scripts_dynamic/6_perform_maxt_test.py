@@ -100,6 +100,16 @@ if __name__ == "__main__":
    if model_type == "hmm":
       btc = modes.argmax_time_courses(alpha)
 
+   # Get DyNeMo mode activation time courses
+   if model_type == "dynemo":
+      btc_path = os.path.join(DATA_DIR, "model/results/dynemo_mtc.pkl")
+      if os.path.exists(btc_path):
+         with open(btc_path, "rb") as input_path:
+            btc = pickle.load(input_path)
+         input_path.close()
+      else:
+         raise ValueError("need to have a `dynemo_mtc.pkl` file.")
+
    # --------- [3] --------- #
    #      Load Spectra       #
    # ----------------------- #
@@ -128,14 +138,11 @@ if __name__ == "__main__":
 
    # Exclude specified outliers
    if (modality == "eeg") and (model_type == "dynemo"):
-        catch_outlier = True
-        outlier_idx = load_outlier(run_dir, modality)
-   if catch_outlier:
+      outlier_idx = load_outlier(run_dir, modality)
       print("Excluding subject outliers ...\n"
               "\tOutlier indices: ", outlier_idx)
       not_olr_idx = np.setdiff1d(np.arange(n_subjects), outlier_idx)
-      if model_type == "hmm":
-         btc = [btc[idx] for idx in not_olr_idx]
+      btc = [btc[idx] for idx in not_olr_idx]
       psd = psd[not_olr_idx]
       coh = coh[not_olr_idx]
       print(f"\tPSD shape: {psd.shape} | Coherence shape: {coh.shape}")
@@ -149,9 +156,8 @@ if __name__ == "__main__":
       ))
 
    # Get fractional occupancies to be used as weights
-   if model_type == "hmm":
-      fo = modes.fractional_occupancies(btc) # dim: (n_subjects, n_states)
-      gfo = np.mean(fo, axis=0) # average over subjects
+   fo = modes.fractional_occupancies(btc) # dim: (n_subjects, n_states)
+   gfo = np.mean(fo, axis=0) # average over subjects
 
    # ------------ [4] ----------- #
    #      Statistical Tests       #

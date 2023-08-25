@@ -73,8 +73,8 @@ if __name__ == "__main__":
     print("Total {} subjects | Young: {} | Old: {}".format(n_subjects, n_young, n_old))
 
     # Select young & old participants
-    young_idx = np.arange(n_subjects)[:n_young]
-    old_idx = np.arange(n_subjects)[n_young:]
+    subject_y_idx = np.arange(n_subjects)[:n_young]
+    subject_o_idx = np.arange(n_subjects)[n_young:]
 
     # Validation
     if len(alpha) != n_subjects:
@@ -135,9 +135,7 @@ if __name__ == "__main__":
 
     # Exclude specified outliers
     if (modality == "eeg") and (model_type == "dynemo"):
-        catch_outlier = True
         outlier_idx = load_outlier(run_dir, modality)
-    if catch_outlier:
         print("Excluding subject outliers ...\n"
               "\tOutlier indices: ", outlier_idx)
         not_olr_idx = np.setdiff1d(np.arange(n_subjects), outlier_idx)
@@ -150,8 +148,8 @@ if __name__ == "__main__":
         n_samples = [d.shape[0] for d in ts]
         w = np.array(n_samples) / np.sum(n_samples)
         # Reassign group indices
-        young_idx = [young_idx[idx] for idx in not_olr_idx]
-        old_idx = [old_idx[idx] for idx in not_olr_idx]
+        young_idx = [idx for idx in not_olr_idx if idx in subject_y_idx]
+        old_idx = [idx for idx in not_olr_idx if idx in subject_o_idx]
         n_subjects -= len(outlier_idx)
         print("\tTotal {} subjects | Young: {} | Old: {}".format(
             n_subjects, len(young_idx), len(old_idx),
