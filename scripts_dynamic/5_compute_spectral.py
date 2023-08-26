@@ -178,6 +178,7 @@ if __name__ == "__main__":
     print("Step 4 - Analyzing spectral information ...")
 
     cluster_dimension = ["Frequency"]
+    n_test = n_class + 1 # tests repeated over states/modes and static mean
 
     # Cluster permutation test on PSDs (mean-subtracted)
     if model_type == "hmm":
@@ -194,7 +195,7 @@ if __name__ == "__main__":
             group_idx=[young_idx, old_idx],
             parcellation_file=parcellation_file,
             method=model_type,
-            bonferroni_ntest=n_class,
+            bonferroni_ntest=n_test,
             filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png"),
         )
     else:
@@ -204,7 +205,7 @@ if __name__ == "__main__":
             ts,
             group_idx=[young_idx, old_idx],
             method=model_type,
-            bonferroni_ntest=n_class,
+            bonferroni_ntest=n_test,
             filename=os.path.join(DATA_DIR, "analysis/psd_cluster_dynamic.png"),
         )
 
@@ -225,7 +226,7 @@ if __name__ == "__main__":
             group_idx=[young_idx, old_idx],
             parcellation_file=parcellation_file,
             method=model_type,
-            bonferroni_ntest=1,
+            bonferroni_ntest=n_test,
             filename=os.path.join(DATA_DIR, "analysis/psd_cluster_static.png"),
         )
     else:
@@ -235,7 +236,7 @@ if __name__ == "__main__":
             ts,
             group_idx=[young_idx, old_idx],
             method=model_type,
-            bonferroni_ntest=1,
+            bonferroni_ntest=n_test,
             filename=os.path.join(DATA_DIR, "analysis/psd_cluster_static.png"),
         )
 

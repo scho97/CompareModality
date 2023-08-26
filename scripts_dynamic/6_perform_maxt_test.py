@@ -193,7 +193,7 @@ if __name__ == "__main__":
    # dim: (n_subjects, n_parcels, n_parcels)
 
    # Define the number of tests for Bonferroni correction
-   bonferroni_ntest = n_class
+   bonferroni_ntest = n_class + 1 # tests repeated over states/modes and static mean
 
    # Preallocate output data
    map_statistics = {
