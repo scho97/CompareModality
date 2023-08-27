@@ -246,6 +246,7 @@ def plot_power_map(
     subtract_mean=False,
     mean_weights=None,
     colormap=None,
+    fontsize=22,
 ):
     """Saves power maps. Wrapper for `osl_dynamics.analysis.power.save()`.
 
@@ -271,6 +272,8 @@ def plot_power_map(
     colormap : str
         Colors for connectivity edges. If None, a default colormap is used 
         ("cold_hot").
+    fontsize : int
+        Fontsize for a powre map colorbar. Defaults to 22.
     """
 
     # Set visualisation parameters
@@ -288,7 +291,7 @@ def plot_power_map(
     )
     for i, fig in enumerate(figures):
         # Reset figure size
-        fig.set_size_inches(5,6)
+        fig.set_size_inches(5, 6)
         # Change colorbar position
         cbar_ax = axes[i][-1]
         pos = cbar_ax.get_position()
@@ -299,18 +302,22 @@ def plot_power_map(
             hmin = round_nonzero_decimal(cbar_ax.get_xlim()[0], method="ceil") # ceiling for negative values
             hmax = round_nonzero_decimal(cbar_ax.get_xlim()[1], method="floor") # floor for positive values
             cbar_ax.set_xticks(np.array([hmin, 0, hmax]))
-            cbar_ax.tick_params(labelsize=18)
+            cbar_ax.tick_params(labelsize=fontsize)
         else:
             cbar_ax.set_xticks(
                 [round_up_half(val) for val in cbar_ax.get_xticks()[1:-1]]
             )
-            cbar_ax.tick_params(labelsize=22)
+            cbar_ax.tick_params(labelsize=fontsize)
+        # Set colorbar styles
         cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
-        cbar_ax.xaxis.offsetText.set_fontsize(18)
+        cbar_xticks = cbar_ax.get_xticks()
+        if (cbar_xticks[-1] >= 0.1) and (cbar_xticks[-1] < 1):
+            cbar_ax.set_xticklabels([str(xt) if xt != 0 else "0" for xt in cbar_xticks])
+        cbar_ax.xaxis.offsetText.set_fontsize(fontsize)
         if len(figures) > 1:
-            fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{i}"))
+            fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{i}"), bbox_inches="tight")
         else:
-            fig.savefig(filename)
+            fig.savefig(filename, bbox_inches="tight")
     plt.close(fig)
 
     return None
@@ -345,7 +352,6 @@ def plot_connectivity_map(
     n_modes = conn_map.shape[0]
 
     # Set visualisation parameters
-    matplotlib.rcParams['font.size'] = 14
     if colormap is None:
         colormap = "bwr"
     
@@ -358,6 +364,9 @@ def plot_connectivity_map(
             plot_kwargs={"edge_cmap": colormap, "figure": fig, "axes": ax},
         )
         cb_ax = fig.get_axes()[-1]
+        pos = cb_ax.get_position()
+        new_pos = [pos.x0 * 1.05, pos.y0, pos.width, pos.height]
+        cb_ax.set_position(new_pos)
         cb_ax.tick_params(labelsize=20)
         if n_modes != 1:
             fig.savefig(
@@ -370,7 +379,7 @@ def plot_connectivity_map(
 
     return None
 
-def plot_selected_parcel_psd(edges, f, psd, filename):
+def plot_selected_parcel_psd(edges, f, psd, filename, fontsize=22):
     """Plots PSDs of specified brain regions.
 
     Parameters
@@ -385,6 +394,8 @@ def plot_selected_parcel_psd(edges, f, psd, filename):
         n_states, n_channels, n_freqs).
     filename : str
         Path for saving the power map.
+    fontsize : int
+        Fontsize for axes ticks and labels. Defaults to 22.
     """
 
     # Number of subjects
@@ -409,6 +420,7 @@ def plot_selected_parcel_psd(edges, f, psd, filename):
         vmax = np.max([vmax, np.max(psds[n] + stes[n])])
     vmin = vmin - (vmax - vmin) * 0.10
     vmax = vmax + (vmax - vmin) * 0.10
+    hmin, hmax = 0, np.ceil(f[-1]) + 1
 
     # Plot averaged PSDs and their standard errors
     for n in range(n_class):
@@ -416,14 +428,19 @@ def plot_selected_parcel_psd(edges, f, psd, filename):
             [f],
             [psds[n]],
             errors=[[psds[n] - stes[n]], [psds[n] + stes[n]]],
-            x_range=[0, np.ceil(f[-1]) + 1],
+            x_range=[hmin, hmax],
             y_range=[vmin, vmax],
             x_label="Frequency (Hz)",
             y_label="PSD (a.u.)",
         )
-        ax.tick_params(labelsize=14)
-        ax.xaxis.label.set_size(14)
-        ax.yaxis.label.set_size(14)
+        # Reset figure size
+        fig.set_size_inches(6, 4)
+        # Set axes ticks
+        ax.set_xticks(np.arange(hmin, hmax, 10))
+        # Set axes tick style
+        ax.tick_params(labelsize=fontsize)
+        ax.xaxis.label.set_size(fontsize)
+        ax.yaxis.label.set_size(fontsize)
         plt.tight_layout()
         if n_class != 1:
             fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{n}"))
