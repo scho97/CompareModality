@@ -437,15 +437,16 @@ def plot_selected_parcel_psd(edges, f, psd, filename, fontsize=22):
         fig.set_size_inches(6, 4)
         # Set axes ticks
         ax.set_xticks(np.arange(hmin, hmax, 10))
+        ax.ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
         # Set axes tick style
         ax.tick_params(labelsize=fontsize)
         ax.xaxis.label.set_size(fontsize)
         ax.yaxis.label.set_size(fontsize)
-        plt.tight_layout()
+        ax.yaxis.offsetText.set_fontsize(fontsize)
         if n_class != 1:
-            fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{n}"))
+            fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{n}"), bbox_inches="tight")
         else:
-            fig.savefig(filename)
+            fig.savefig(filename, bbox_inches="tight")
         plt.close(fig)
 
     return None
