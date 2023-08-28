@@ -554,8 +554,8 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
             ax[k, j].yaxis.offsetText.set_fontsize(18)
 
             # Plot observed statistics
-            end_pt = np.mean([py[-1], po[-1]])
-            criteria = np.mean([ax[k, j].get_ylim()[0], ax[k, j].get_ylim()[1] * 0.95])
+            end_pt = np.mean([py[int(len(py) // 3):], po[int(len(po) // 3):]])
+            criteria = np.mean([ax[k, j].get_ylim()[0], ax[k, j].get_ylim()[1]])
             if end_pt >= criteria:
                 inset_bbox = (0, -0.22, 1, 1)
             if end_pt < criteria:
@@ -568,9 +568,9 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
                 ax_inset.axvspan(f[clu_idx[c]][0], f[clu_idx[c]][-1], facecolor='tab:red', alpha=0.1)
             ax_inset.set(
                 xticks=np.arange(0, max(f), 20),
-                ylabel="t-statistics",
+                ylabel="t-stats",
             )
-            ax_inset.set_ylabel('t-statistics', fontsize=16)
+            ax_inset.set_ylabel('t-stats', fontsize=16)
             ax_inset.tick_params(labelsize=16)
 
             # Set the column index
