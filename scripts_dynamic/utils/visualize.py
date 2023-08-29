@@ -963,6 +963,7 @@ def plot_thresholded_map(tstats, pvalues, map_type, mask_file, parcellation_file
             mean_weights=None,
             colormap="RdBu_r",
             filename=filenames[0],
+            fontsize=24,
          )
          # Plot thresholded t-map
          tstats_sig = np.zeros((tstats.shape))
@@ -976,6 +977,7 @@ def plot_thresholded_map(tstats, pvalues, map_type, mask_file, parcellation_file
             mean_weights=None,
             colormap="RdBu_r",
             filename=filenames[1],
+            fontsize=24,
          )
       elif map_type == "connectivity":
          n_parcels = np.ceil(np.sqrt(len(tstats) * 2)).astype(int)
