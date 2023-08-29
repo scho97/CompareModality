@@ -42,14 +42,14 @@ if __name__ == "__main__":
 
     # Define best runs
     BEST_RUNS = {
-        "eeg": {"hmm": [6, 15, 25, 32, 42, 50, 62, 77, 84, 93],
-                "dynemo": [2, 16, 20, 35, 43, 58, 68, 70, 86, 94]},
-        "meg": {"hmm": [3, 15, 22, 31, 49, 57, 64, 74, 89, 96],
-                "dynemo": [0, 14, 21, 30, 49, 58, 62, 77, 82, 93]},
+        "eeg": {"hmm": [9, 18, 28, 39, 41, 57, 69, 70, 85, 90],
+                "dynemo": [8, 19, 25, 30, 46, 58, 61, 78, 89, 96]},
+        "meg": {"hmm": [6, 19, 26, 30, 44, 59, 65, 76, 83, 92],
+                "dynemo": [0, 19, 22, 33, 45, 57, 69, 75, 88, 90]},
     }
+    run_ids = BEST_RUNS[modality][model_type]
 
     # Load map statistics
-    run_ids = BEST_RUNS[modality][model_type]
     tstat_map, pval_map, mask_map = [], [], []
     for n, id in enumerate(run_ids):
         run_dir = f"run{run_ids[n]}_{model_type}"
