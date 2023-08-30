@@ -56,14 +56,16 @@ if __name__ == "__main__":
         with open(os.path.join(DATA_DIR, f"{run_dir}/model/results/map_statistics.pkl"), "rb") as input_path:
             map_statistics = pickle.load(input_path)
         tstats = (
-            np.array(map_statistics["power"]["tstats"]), # dim: (n_states, n_parcels)
+            np.array(map_statistics["power_static"]["tstats"]), # dim: (1, n_parcels)
             np.array(map_statistics["power_dynamic"]["tstats"]), # dim: (n_states, n_parcels)
-            np.array(map_statistics["connectivity"]["tstats"]), # dim: (n_states, n_parcels, n_parcels)
+            np.array(map_statistics["connectivity_static"]["tstats"]), # dim: (1, n_parcels, n_parcels)
+            np.array(map_statistics["connectivity_dynamic"]["tstats"]), # dim: (n_states, n_parcels, n_parcels)
         )
         pvalues = (
-            np.array(map_statistics["power"]["pvalues"]), # dim: (n_states, n_parcels)
+            np.array(map_statistics["power_static"]["pvalues"]), # dim: (1, n_parcels)
             np.array(map_statistics["power_dynamic"]["pvalues"]), # dim: (n_states, n_parcels)
-            np.array(map_statistics["connectivity"]["pvalues"]), # dim: (n_states, n_parcels, n_parcels)
+            np.array(map_statistics["connectivity_static"]["pvalues"]), # dim: (1, n_parcels, n_parcels)
+            np.array(map_statistics["connectivity_dynamic"]["pvalues"]), # dim: (n_states, n_parcels, n_parcels)
         )
         tstat_map.append(tstats)
         pval_map.append(pvalues)
@@ -73,37 +75,36 @@ if __name__ == "__main__":
     n_runs = len(run_ids)
     n_class = 8
     
-    # Visualize reproducibility of power maps
-    print("*** Reproducibility of power maps ***")
-    tstat_power_map = np.mean([tstat[0] for tstat in tstat_map], axis=0)
-    mask_power_map = np.sum([mask[0] for mask in mask_map], axis=0)
+    # Visualize reproducibility of power maps (mean across states/modes)
+    print("*** Reproducibility of power maps (mean-only) ***")
+    tstat_power_map = np.squeeze(np.mean([tstat[0] for tstat in tstat_map], axis=0))
+    mask_power_map = np.squeeze(np.sum([mask[0] for mask in mask_map], axis=0))
 
-    for n in range(n_class):
-        if np.sum(mask_power_map[n, :]) > 0:
-            print(f"Processing State/Mode {n + 1} ...")
-            # Plot counts of regions with significant between-group differences
-            fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 3))
-            plot_surfaces(
-                mask_power_map[n, :].astype(float),
-                mask_file,
-                parcellation_file,
-                colormap="YlGnBu",
-                asymmetric_data=True,
-                discrete=n_runs,
-                figure=fig,
-                axis=ax,
-            )
-            fig.savefig(os.path.join(SAVE_DIR, f"reprod_power_count_{n}.png"), transparent=True)
-            plt.close(fig)
-            # Plot average t-statistics across runs
-            plot_power_map(
-                tstat_power_map[n, :],
-                mask_file,
-                parcellation_file,
-                filename=os.path.join(SAVE_DIR, f"reprod_power_tstat_{n}.png"),
-                asymmetric_data=False,
-                colormap="RdBu_r",
-            )
+    if np.sum(mask_power_map > 0):
+        print("Processing static mean power map ...")
+        # Plot counts of regions with significant between-group differences
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 3))
+        plot_surfaces(
+            mask_power_map.astype(float),
+            mask_file,
+            parcellation_file,
+            colormap="YlGnBu",
+            asymmetric_data=True,
+            discrete=n_runs,
+            figure=fig,
+            axis=ax,
+        )
+        fig.savefig(os.path.join(SAVE_DIR, "reprod_power_static_count.png"), transparent=True)
+        plt.close(fig)
+        # Plot average t-statistics across runs
+        plot_power_map(
+            tstat_power_map,
+            mask_file,
+            parcellation_file,
+            filename=os.path.join(SAVE_DIR, "reprod_power_static_tstat.png"),
+            asymmetric_data=False,
+            colormap="RdBu_r",
+        )
 
     # Visualize reproducibility of power maps (mean across states/modes subtracted)
     print("*** Reproducibility of power maps (mean-subtracted) ***")
@@ -112,7 +113,7 @@ if __name__ == "__main__":
 
     for n in range(n_class):
         if np.sum(mask_power_map_dynamic[n, :]) > 0:
-            print(f"Processing State/Mode {n + 1} ...")
+            print(f"Processing state/mode {n + 1} power map ...")
             # Plot counts of regions with significant between-group differences
             fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(9, 3))
             plot_surfaces(
@@ -137,10 +138,44 @@ if __name__ == "__main__":
                 colormap="RdBu_r",
             )
 
-    # Visualize reproducibility of connectivity maps
-    print("*** Reproducibility of connectivity maps ***")
-    tstat_conn_map = np.mean([tstat[2] for tstat in tstat_map], axis=0)
-    mask_conn_map = np.sum([mask[2] for mask in mask_map], axis=0, dtype=float)
+    # Visualize reproducibility of connectivity maps (mean across states/modes)
+    print("*** Reproducibility of connectivity maps (mean-only) ***")
+    tstat_conn_map = np.squeeze(np.mean([tstat[2] for tstat in tstat_map], axis=0))
+    mask_conn_map = np.squeeze(np.sum([mask[2] for mask in mask_map], axis=0, dtype=float))
+
+    np.fill_diagonal(tstat_conn_map, np.nan)
+    np.fill_diagonal(mask_conn_map, np.nan)
+
+    if np.nansum(mask_conn_map) > 0:
+        print("Processing static mean connectivity map ...")
+        # Plot counts of regions with significant between-group differences
+        plot_connectivity_map_for_reprod(
+            mask_conn_map,
+            parcellation_file,
+            filename=os.path.join(SAVE_DIR, "reprod_conn_static_count.png"),
+            colormap="plasma_r",
+            asymmetric_data=True,
+            discrete=n_runs,
+        )
+        # Conserve the top 3% of t-statistics
+        tstat_conn_thr = connectivity.threshold(
+            tstat_conn_map,
+            absolute_value=True,
+            percentile=97,
+        )
+        # Plot average t-statistics across runs
+        plot_connectivity_map_for_reprod(
+            tstat_conn_thr,
+            parcellation_file,
+            filename=os.path.join(SAVE_DIR, "reprod_conn_static_tstat.png"),
+            colormap="RdBu_r",
+            asymmetric_data=False,
+        )
+
+    # Visualize reproducibility of connectivity maps (mean across states/modes subtracted)
+    print("*** Reproducibility of connectivity maps (mean-subtracted) ***")
+    tstat_conn_map = np.mean([tstat[3] for tstat in tstat_map], axis=0)
+    mask_conn_map = np.sum([mask[3] for mask in mask_map], axis=0, dtype=float)
 
     for n in range(n_class):
         np.fill_diagonal(tstat_conn_map[n], np.nan)
@@ -148,12 +183,12 @@ if __name__ == "__main__":
 
     for n in range(n_class):
         if np.nansum(mask_conn_map[n]) > 0:
-            print(f"Processing State/Mode {n + 1} ...")
+            print(f"Processing state/mode {n + 1} power map ...")
             # Plot counts of regions with significant between-group differences
             plot_connectivity_map_for_reprod(
                 mask_conn_map[n, :, :],
                 parcellation_file,
-                filename=os.path.join(SAVE_DIR, f"reprod_conn_count_{n}.png"),
+                filename=os.path.join(SAVE_DIR, f"reprod_conn_dynamic_count_{n}.png"),
                 colormap="plasma_r",
                 asymmetric_data=True,
                 discrete=n_runs,
@@ -168,7 +203,7 @@ if __name__ == "__main__":
             plot_connectivity_map_for_reprod(
                 tstat_conn_thr,
                 parcellation_file,
-                filename=os.path.join(SAVE_DIR, f"reprod_conn_tstat_{n}.png"),
+                filename=os.path.join(SAVE_DIR, f"reprod_conn_dynamic_tstat_{n}.png"),
                 colormap="RdBu_r",
                 asymmetric_data=False,
             )
