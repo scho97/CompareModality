@@ -97,6 +97,7 @@ def plot_power_map(
     mean_weights=None,
     asymmetric_data=False,
     colormap=None,
+    fontsize=26,
 ):
     """Saves power maps. Wrapper for `osl_dynamics.analysis.power.save()`.
 
@@ -125,6 +126,8 @@ def plot_power_map(
     colormap : str
         Colors for connectivity edges. If None, a default colormap is used 
         ("cold_hot").
+    fontsize: int
+        Fontsize for the power map colorbar. Defaults to 26.
     """
 
     # Set visualisation parameters
@@ -159,8 +162,8 @@ def plot_power_map(
                 [round_up_half(val) for val in cbar_ax.get_xticks()[1:-1]]
             )
         cbar_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
-        cbar_ax.tick_params(labelsize=24)
-        cbar_ax.xaxis.offsetText.set_fontsize(24)
+        cbar_ax.tick_params(labelsize=fontsize)
+        cbar_ax.xaxis.offsetText.set_fontsize(fontsize)
         if len(figures) > 1:
             fig.savefig(filename.replace(filename.split('.')[0], filename.split('.')[0] + f"_{i}"))
         else:
