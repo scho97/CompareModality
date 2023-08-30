@@ -228,10 +228,9 @@ def plot_surfaces(
             org_vmin = np.min(data_map)
             org_vmax = np.max(data_map)
             data_map = min_max_scale(data_map)
-    data_map = data_map[np.newaxis, ...] # add dimension for `power_map_grid()`
 
     # Calculate data map grid
-    data_map = analysis.power.power_map_grid(mask_file, parcellation_file, data_map)
+    data_map = analysis.power.parcel_vector_to_voxel_grid(mask_file, parcellation_file, data_map)
 
     # Load the mask
     mask = nib.load(mask_file)
@@ -239,28 +238,26 @@ def plot_surfaces(
     # Number of modes
     n_modes = data_map.shape[-1]
 
-    # Visualize surface map
-    for i in trange(n_modes, desc="Saving images"):
-        # Construct discrete colormap
-        if discrete:
-            cmap = plt.get_cmap(colormap)
-            cmap = cmap(np.linspace(0, 1, discrete + 1))
-            colormap = matplotlib.colors.ListedColormap(cmap)
-        # Plot surface map
-        nii = nib.Nifti1Image(data_map[:, :, :, i], mask.affine, mask.header)
-        plot_glass_brain(
-            nii,
-            output_file=None,
-            display_mode='lyr',
-            colorbar=True,
-            figure=figure,
-            axes=axis,
-            cmap=colormap,
-            alpha=0.9,
-            vmin=vmin,
-            vmax=vmax,
-            plot_abs=False,
-        )
+    # Construct discrete colormap
+    if discrete:
+        cmap = plt.get_cmap(colormap)
+        cmap = cmap(np.linspace(0, 1, discrete + 1))
+        colormap = matplotlib.colors.ListedColormap(cmap)
+    # Plot the surface map
+    nii = nib.Nifti1Image(data_map, mask.affine, mask.header)
+    plot_glass_brain(
+        nii,
+        output_file=None,
+        display_mode='lyr',
+        colorbar=True,
+        figure=figure,
+        axes=axis,
+        cmap=colormap,
+        alpha=0.9,
+        vmin=vmin,
+        vmax=vmax,
+        plot_abs=False,
+    )
 
     # Add manual colorbar
     if asymmetric_data:
