@@ -10,6 +10,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import glmtools as glm
 from osl_dynamics import analysis
+from utils.array_ops import round_nonzero_decimal, round_up_half
 from utils.visualize import create_transparent_cmap
 
 
@@ -186,7 +187,6 @@ if __name__ == "__main__":
         fig.savefig(savename, transparent=True)
         plt.close()
 
-
     if data_type == "power":
         # Get t-map
         tmap = model.tstats[0]
@@ -204,9 +204,17 @@ if __name__ == "__main__":
         pos = cb_ax.get_position()
         new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
         cb_ax.set_position(new_pos)
-        cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
+        if np.any(np.abs(np.array(cb_ax.get_xlim())) < 1):
+            hmin = round_nonzero_decimal(cb_ax.get_xlim()[0], method="ceil") # ceiling for negative values
+            hmax = round_nonzero_decimal(cb_ax.get_xlim()[1], method="floor") # floor for positive values
+            cb_ax.set_xticks(np.array([hmin, 0, hmax]))
+        else:
+            cb_ax.set_xticks(
+                [round_up_half(val) for val in cb_ax.get_xticks()[1:-1]]
+            )
+        cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
         cb_ax.tick_params(labelsize=24)
-        fig.savefig(os.path.join(SAVE_DIR, "map_tscore.png"))
+        fig.savefig(os.path.join(SAVE_DIR, "map_tscore.png"), bbox_inches="tight")
         plt.close(fig)
 
         # Plot power map of thresholded t-statistics
@@ -232,9 +240,17 @@ if __name__ == "__main__":
         pos = cb_ax.get_position()
         new_pos = [pos.x0 * 0.90, pos.y0 + 0.02, pos.width * 1.20, pos.height * 1.10]
         cb_ax.set_position(new_pos)
-        cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(0,0))
+        if np.any(np.abs(np.array(cb_ax.get_xlim())) < 1):
+            hmin = round_nonzero_decimal(cb_ax.get_xlim()[0], method="ceil") # ceiling for negative values
+            hmax = round_nonzero_decimal(cb_ax.get_xlim()[1], method="floor") # floor for positive values
+            cb_ax.set_xticks(np.array([hmin, 0, hmax]))
+        else:
+            cb_ax.set_xticks(
+                [round_up_half(val) for val in cb_ax.get_xticks()[1:-1]]
+            )
+        cb_ax.ticklabel_format(style='scientific', axis='x', scilimits=(-2, 6))
         cb_ax.tick_params(labelsize=24)
-        fig.savefig(savename)
+        fig.savefig(savename, bbox_inches="tight")
         plt.close(fig)
 
     print("Max t-statistics of the original t-map: ", np.max(np.abs(tmap))) # absolute values used for two-tailed t-test
