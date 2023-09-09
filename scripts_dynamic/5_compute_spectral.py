@@ -240,16 +240,19 @@ if __name__ == "__main__":
             filename=os.path.join(DATA_DIR, "analysis/psd_cluster_static.png"),
         )
 
-    # Plot PSD (mean-subtracted) vs. Coherence
+    # Plot PSD vs. Coherence (mean-subtracted)
     if model_type == "hmm":
         input_psd = psd - np.average(psd, axis=1, weights=gfo, keepdims=True)
     if model_type == "dynemo":
         input_psd = psd_rescaled[:, 0, :, :, :] # use rescaled regression coefficients
 
+    coh_static_mean = np.average(coh, axis=1, weights=gfo, keepdims=True)
+    input_coh = coh - coh_static_mean
+
     visualize.plot_pow_vs_coh(
         f,
         input_psd,
-        coh,
+        input_coh,
         group_idx=[young_idx, old_idx],
         method=model_type,
         filenames=[os.path.join(DATA_DIR, f"analysis/pow_coh_dynamic_{lbl}.png") for lbl in ["young", "old"]],
