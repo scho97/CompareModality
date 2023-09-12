@@ -34,9 +34,9 @@ cd CompareModality
 The analyses and visualizations in this paper had following dependencies:
 
 ```
-python
-osl-dynamics
-seaborn
+python==3.10.6
+osl-dynamics==1.2.6
+seaborn==0.12.2
 ```
 
 ## 🪪 License
