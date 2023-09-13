@@ -1,7 +1,7 @@
 # CompareModality
 Analysis of EEG LEMON and MEG CamCAN
 
-To appear in Chapter 2 of my master's thesis: _Inferring brain network dynamics of simultaneous MEG-EEG data in Alzheimer's disease_
+To appear in Chapter 2 of my master's thesis: _Inferring brain network dynamics of MEG and EEG in healthy aging and Alzheimer's disease_
 
 💡 Please email SungJun Cho at sungjun.cho@psych.ox.ac.uk with any questions or concerns.
 
@@ -40,4 +40,4 @@ seaborn==0.12.2
 ```
 
 ## 🪪 License
-Copyright (c) 2023 [SungJun Cho](https://github.com/scho97) and [OHBA Analysis Group]([https://www.jeelab.net/](https://github.com/OHBA-analysis)). `CompareModality` is a free and open-source software licensed under the [MIT License](https://github.com/scho97/CompareModality/blob/main/LICENSE).
+Copyright (c) 2023 [SungJun Cho](https://github.com/scho97) and [OHBA Analysis Group](https://github.com/OHBA-analysis). `CompareModality` is a free and open-source software licensed under the [MIT License](https://github.com/scho97/CompareModality/blob/main/LICENSE).
