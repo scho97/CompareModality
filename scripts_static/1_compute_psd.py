@@ -3,9 +3,8 @@
 """
 
 # Set up dependencies
-import os, glob, pickle
+import os, pickle
 import numpy as np
-import utils
 from sys import argv
 from osl_dynamics import data
 from osl_dynamics.analysis.static import power_spectra
