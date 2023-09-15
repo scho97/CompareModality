@@ -7,9 +7,8 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from osl_dynamics import analysis
-from osl_dynamics.analysis import power
+from osl_dynamics.analysis import power, static
 from osl_dynamics.data import Data
-from osl_dynamics.analysis import static
 
 ##################
 ##     PSDs     ##
