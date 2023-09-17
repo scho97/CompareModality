@@ -19,11 +19,12 @@ This repository contains all the scripts necessary to reproduce the analysis and
 ### Installation Guide
 To start, you first need to install the `osl-dynamics` package and set up its environment. Its installation guide can be found [here](https://github.com/OHBA-analysis/osl-dynamics).
 
-Next, install the `seaborn` package for visualization, and download this repository to your designated folder location as below. Once these steps are complete, you're ready to go!
+The `seaborn` and `openpyxl` packages need to be additionally installed for visualization and compatibility with excel files. Next, download this repository to your designated folder location as below. Once these steps are complete, you're ready to go!
 
 ```
 conda activate osld
 pip install seaborn
+pip install openpyxl
 git clone https://github.com/scho97/CompareModality.git
 cd CompareModality
 ```
@@ -37,6 +38,7 @@ The analyses and visualizations in this paper had following dependencies:
 python==3.10.6
 osl-dynamics==1.2.6
 seaborn==0.12.2
+openpyxl==3.1.2
 ```
 
 ## 🪪 License
