@@ -65,8 +65,8 @@ if __name__ == "__main__":
     )
 
     # Threshold connectivity matrices
-    gconn_map_y = connectivity.threshold(gconn_map_y, percentile=95)
-    gconn_map_o = connectivity.threshold(gconn_map_o, percentile=95)
+    gconn_map_y = connectivity.threshold(gconn_map_y, percentile=97)
+    gconn_map_o = connectivity.threshold(gconn_map_o, percentile=97)
     diff_map = connectivity.threshold(diff_map, absolute_value=True, percentile=97)
 
     # Plot AEC graph networks
