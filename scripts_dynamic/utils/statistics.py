@@ -456,6 +456,8 @@ def detect_outliers(data, group_idx):
     data : np.ndarray
         The data to detect outliers from. Shape must be (n_subjects,)
         or (n_subjects, n_features).
+    group_idx : list of list
+        List containing subject indices of each age group.
 
     Returns
     -------
