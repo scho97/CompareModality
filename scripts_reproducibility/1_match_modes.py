@@ -59,14 +59,14 @@ if __name__ == "__main__":
 
     # Concatenate state/alpha time courses subject-wise
     if match_type == "ts":
-        # State time courses
+        # For EEG LEMON
         cat_lemon_hmm = np.concatenate(lemon_hmm_stc, axis=0)
         cat_lemon_dynemo = np.concatenate(lemon_dynemo_alpha, axis=0)
         print("[EEG LEMON]")
         print("\tShape of HMM state time courses: ", np.shape(cat_lemon_hmm))
         print("\tShape of Dynemo mode time courses: ", np.shape(cat_lemon_dynemo))
 
-        # Alpha time courses
+        # For MEG Cam-CAN
         cat_camcan_hmm = np.concatenate(camcan_hmm_stc, axis=0)
         cat_camcan_dynemo = np.concatenate(camcan_dynemo_alpha, axis=0)
         print("[MEG CAMCAN]")
