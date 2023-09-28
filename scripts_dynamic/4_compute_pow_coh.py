@@ -207,13 +207,12 @@ if __name__ == "__main__":
         filename=os.path.join(DATA_DIR, "maps/conn_map_whole.png"),
     )
 
-    # Plot PSDs from parcels associated with thresholded connections
+    # Plot mean-subtracted channel-averaged PSDs for each state/mode
+    if model_type == "hmm":
+        psd = psd - np.average(psd, axis=1, weights=gfo, keepdims=True)
     if model_type == "dynemo":
         psd = psd[:, 0, :, :, :] # use regression coefficients only
     
-    visualize.plot_selected_parcel_psd(
-        edges, f, psd,
-        filename=os.path.join(DATA_DIR, "maps/conn_psd_whole.png"),
-    )
+    visualize.plot_rsn_psd(f, psd, filename=os.path.join(DATA_DIR, "maps/conn_psd_whole.png"))
 
     print("Analysis complete.")

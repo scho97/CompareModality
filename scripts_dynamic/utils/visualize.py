@@ -2,6 +2,7 @@
 
 """
 
+import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -10,16 +11,11 @@ import matplotlib.pyplot as plt
 
 from osl_dynamics import analysis
 from osl_dynamics.utils import plotting
-from osl_dynamics.utils.parcellation import Parcellation
 from utils.array_ops import round_nonzero_decimal, round_up_half
 from utils.data import divide_psd_by_age
-from utils.statistics import (group_diff_mne_cluster_perm_2d,
-                              group_diff_cluster_perm_2d,
-                              group_diff_cluster_perm_3d)
+from utils.statistics import group_diff_mne_cluster_perm_2d, group_diff_cluster_perm_2d
 
 from matplotlib.transforms import Bbox
-from matplotlib.colors import ListedColormap
-from nilearn.plotting import plot_markers
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
@@ -379,37 +375,45 @@ def plot_connectivity_map(
 
     return None
 
-def plot_selected_parcel_psd(edges, f, psd, filename, fontsize=22):
-    """Plots PSDs of specified brain regions.
+def plot_rsn_psd(f, psd, edges=None, filename=None, fontsize=22):
+    """Plots state/mode-specific PSDs averaged over channels.
 
     Parameters
     ----------
-    edges : boolean array
-        A boolean array marking significant connectivity edges. Shape must be 
-        (n_modes, n_channels, n_channels).
     f : np.ndarray
         Frequencies of the power spectra.
     psd : np.ndarray
         Power spectra for each subject and state/mode. Shape is (n_subjects,
         n_states, n_channels, n_freqs).
+    edges : boolean array
+        A boolean array marking specific brain regions. Shape must be 
+        (n_modes, n_channels, n_channels). Defaults to None. If given,
+        PSDs will be averaged over for selected channels.
     filename : str
-        Path for saving the power map.
+        Path for saving the power map. Defaults to None, in which case the 
+        figure will be saved in a current directory.
     fontsize : int
         Fontsize for axes ticks and labels. Defaults to 22.
     """
+    # Validation
+    if filename is None:
+        filename = os.getcwd()
 
     # Number of subjects
     n_subjects = psd.shape[0]
 
     # Number of states/modes
-    n_class = edges.shape[0]
+    n_class = psd.shape[1]
 
     # Select PSDs of parcels with significant connection strengths
     psds, stes = [], []
     vmin, vmax = 0, 0
     for n in range(n_class):
-        parcel_idx = np.unique(np.concatenate(np.where(edges[n] == True)))
-        mode_psd = np.squeeze(psd[:, n, parcel_idx, :])
+        if edges is not None:
+            parcel_idx = np.unique(np.concatenate(np.where(edges[n] == True)))
+            mode_psd = np.squeeze(psd[:, n, parcel_idx, :])
+        else:
+            mode_psd = np.squeeze(psd[:, n, :, :])
         psds.append(np.mean(
             mode_psd, axis=(0, 1) # average over subjects and parcels
         ))
@@ -651,178 +655,6 @@ def plot_mode_spectra_group_diff_2d(f, psd, ts, group_idx, method, bonferroni_nt
 
         fig.savefig(filename, bbox_inches="tight")
         plt.close(fig)
-
-    return None
-
-def plot_mode_spectra_group_diff_3d(f, psd, ts, group_idx, parcellation_file, method, bonferroni_ntest, filename):
-    """Plots state/mode-specific PSDs and their between-group statistical differences.
-
-    This function tests statistical differences using a cluster permutation test on the 
-    spatial and frequency axes.
-
-    Parameters
-    ----------
-    f : np.ndarray
-        Frequencies of the power spectra and coherences. Shape is (n_freqs,).
-    psd : np.ndarray
-        Power spectra for each subject and state/mode. Shape must be (n_subjects,
-        n_states, n_channels, n_freqs).
-    ts : list of np.ndarray
-        Time series data for each subject. Shape must be (n_subjects, n_samples,
-        n_channels).
-    group_idx : list of lists
-        List containing indices of subjects in each group.
-    parcellation_file : str
-        Parcellation file used to parcelate the training data.
-    method : str
-        Type of the dynamic model. Can be "hmm" or "dynemo".
-    bonferroni_ntest : int
-        Number of tests to use for Bonferroni correction.
-    filename : str
-        Path for saving the figure.
-    """
-
-    # Number of channels/parcels
-    n_parcels = psd.shape[-2]
-    print("Number of parcels: ", n_parcels)
-
-    # Set plot labels
-    if method == "hmm":
-        lbl = "State"
-    elif method == "dynemo":
-        lbl = "Mode"
-
-    # Get PSDs and weights for each age group
-    psd_young, psd_old, w_young, w_old = divide_psd_by_age(psd, ts, group_idx)
-    gpsd_young = np.average(psd_young, axis=0, weights=w_young)
-    gpsd_old = np.average(psd_old, axis=0, weights=w_old)
-    # dim (gpsd): (n_modes, n_parcels, n_freqs)
-
-    # Build a colormap
-    qcmap = plt.rcParams["axes.prop_cycle"].by_key()["color"] # qualitative
-    scmap = plt.cm.viridis_r(np.linspace(0, 1, n_parcels)) # sequential
-
-    # Plot mode-specific PSDs and their statistical differences
-    fig, ax = plt.subplots(nrows=2, ncols=4, figsize=(26, 14))
-    k, j = 0, 0 # subplot indices
-    for n in range(len(gpsd_young)):
-        print(f"Plotting {lbl} {n + 1}")
-        
-        # Set the row index
-        if (n % 4 == 0) and (n != 0):
-            k += 1
-        
-        # Perform cluster permutation test on mode-specific PSDs
-        input_psd = np.concatenate((psd_old, psd_young), axis=0)[:, n, :, :]
-        # dim: (n_subjects, n_modes, n_parcels, n_freqs) -> (n_subjects, n_parcels, n_freqs)
-        input_psd = np.rollaxis(input_psd, 2, 1)
-        # dim: (n_subjects, n_parcels, n_freqs) -> (n_subjects, n_freqs, n_parcles)
-        conds = np.concatenate((np.repeat((1,), len(psd_old)), np.repeat((2,), len(psd_young))))
-        clu, obs, clust_fidx, clust_pidx = group_diff_cluster_perm_3d(
-            data=input_psd,
-            assignments=conds,
-            n_perm=1500,
-            parcellation_file=parcellation_file,
-            metric="tstats",
-            bonferroni_ntest=bonferroni_ntest,
-            n_jobs=1,
-        )
-        n_clusters = len(clu)
-
-        # Average group-level PSDs over the parcels
-        py = np.mean(gpsd_young[n], axis=0)
-        po = np.mean(gpsd_old[n], axis=0)
-        ey = np.std(gpsd_young[n], axis=0) / np.sqrt(gpsd_young.shape[0])
-        eo = np.std(gpsd_old[n], axis=0) / np.sqrt(gpsd_old.shape[0])
-
-        # Plot mode-specific group-level PSDs
-        ax[k, j].plot(f, py, c=qcmap[n], label="Young")
-        ax[k, j].plot(f, po, c=qcmap[n], label="Old", linestyle="--")
-        ax[k, j].fill_between(f, py - ey, py + ey, color=qcmap[n], alpha=0.1)
-        ax[k, j].fill_between(f, po - eo, po + eo, color=qcmap[n], alpha=0.1)
-        if n_clusters > 0:
-            for c in range(n_clusters):
-                ax[k, j].axvspan(f[clust_fidx[c][0]], f[clust_fidx[c][-1]], facecolor='k', alpha=0.1)
-
-        # Shrink axes to make space for topographical maps
-        ax_pos = ax[k, j].get_position()
-        ax[k, j].set_position([ax_pos.x0, ax_pos.y0, ax_pos.width, ax_pos.height * 0.65])
-
-        # Put axes for topographical maps
-        topo_centers = np.linspace(0, 1, n_clusters + 2)[1:-1]
-        if n_clusters == 0: # put up an empty axes
-            topo_pos = [0.3, 1.1, 0.4, 0.4]
-            topo_ax = ax[k, j].inset_axes(topo_pos, frame_on=False)
-            topo_ax.tick_params(bottom=False, left=False, labelbottom=False, labelleft=False)
-
-        # Get parcel locations
-        parcellation = Parcellation(parcellation_file)
-        roi_centers = parcellation.roi_centers()
-        
-        # Re-order to use colour to indicate anterior->posterior location
-        order = np.argsort(roi_centers[:, 1])
-        roi_centers = roi_centers[order]
-        
-        # Plot topographical maps
-        for c in range(n_clusters):
-            # Set axes
-            topo_pos = [topo_centers[c] - 0.2, 1.1, 0.4, 0.4]
-            topo_ax = ax[k, j].inset_axes(topo_pos)
-            # Plot parcel topographical map
-            clust_pidx_ordered = sorted([list(order).index(pidx) for pidx in clust_pidx[c]])
-            topo_roi = roi_centers[clust_pidx_ordered, :]
-            print(f"{len(topo_roi)} ROIs selected for the topographical map.")
-            topo_cmap = ListedColormap(scmap[clust_pidx_ordered, :])
-            plot_markers(
-                np.arange(len(topo_roi)),
-                topo_roi,
-                node_cmap=topo_cmap,
-                display_mode='z',
-                node_size=20,
-                colorbar=False,
-                axes=topo_ax,
-            )
-            # Connect frequency ranges to topographical map
-            xy = (f[clust_fidx[c]].mean(), ax[k, j].get_ylim()[1])
-            con = matplotlib.patches.ConnectionPatch(xyA=xy, xyB=(np.mean(topo_ax.get_xlim()), topo_ax.get_ylim()[0]),
-                                                    coordsA=ax[k, j].transData, coordsB=topo_ax.transData,
-                                                    axesA=ax[k, j], axesB=topo_ax, color='k', lw=2)
-            ax[k, j].add_artist(con)
-
-        # Set labels
-        ax[k, j].set_xlabel('Frequency (Hz)', fontsize=14)
-        if j == 0:
-            ax[k, j].set_ylabel('PSD (a.u.)', fontsize=14)
-        ax[k, j].set_title(f'{lbl} {n + 1}', fontsize=14)
-        ax[k, j].ticklabel_format(style="scientific", axis="y", scilimits=(-2, 6))
-        ax[k, j].tick_params(labelsize=14)
-        ax[k, j].yaxis.offsetText.set_fontsize(14)
-
-        # Plot observed statistics
-        obs = np.copy(obs)[:, order] # re-order to use colour to indicate anterior->posterior location
-        end_pt = np.mean([py[-1], po[-1]])
-        criteria = np.mean([ax[k, j].get_ylim()[0], ax[k, j].get_ylim()[1] * 0.95])
-        if end_pt >= criteria:
-            inset_bbox = (0, -0.22, 1, 1)
-        if end_pt < criteria:
-            inset_bbox = (0, 0.28, 1, 1)
-        ax_inset = inset_axes(ax[k, j], width='40%', height='30%', 
-                              loc='center right', bbox_to_anchor=inset_bbox,
-                              bbox_transform=ax[k, j].transAxes)
-        for t in reversed(range(n_parcels)):
-            ax_inset.plot(f, obs[:, t], color=scmap[t, :]) # plot t-spectra for each channel
-        for c in range(len(clu)):
-            ax_inset.axvspan(f[clust_fidx[c][0]], f[clust_fidx[c][-1]], facecolor='k', alpha=0.1)
-        ax_inset.set_ylabel('t-statistics', fontsize=12)
-        ax_inset.tick_params(labelsize=12)
-
-        # Set the column index
-        j += 1
-        if (j % 4 == 0) and (j != 0):
-            j = 0
-
-    fig.savefig(filename)
-    plt.close(fig)
 
     return None
 
