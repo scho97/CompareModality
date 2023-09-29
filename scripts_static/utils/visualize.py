@@ -689,7 +689,7 @@ class GroupPSDDifference():
         elif self.data_space == "sensor":
             cb = plt.colorbar(matplotlib.cm.ScalarMappable(norm=cnorm_bottom, cmap=cmap), cax=cb_ax, orientation='vertical')
         cb.ax.set_yticks([vmin_bottom, 0, vmax_bottom])
-        cb.ax.set_ylabel("PSD (a.u.)", fontsize=12)
+        cb.ax.set_ylabel("Power (a.u.)", fontsize=12)
         cb.ax.ticklabel_format(style='scientific', axis='y', scilimits=(-2, 4))
 
         # Set labels
