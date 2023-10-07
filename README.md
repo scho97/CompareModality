@@ -31,6 +31,13 @@ cd CompareModality
 
 ## 📄 Detailed Descriptions
 
+Each directory named `scripts_*` contains a `utils` folder, where the functions required to execute the scripts are kept. Within this directory, scripts are numerically prefixed, indicating the sequence in which they should run. A few exceptions are:
+
+- Excel files that store (1) state/mode orders of inferred RSNs and (2) subject outlier indices for DyNeMo trained on the EEG data. (Located in `scripts_reproducibility`)
+- Scripts for training HMM and DyNeMo models on the data. These scripts are not prefixed, as they are (technically speaking) not crafted for the post hoc analysis. (Located in `scripts_dynamic`)
+
+For more details, please refer to the thesis. All code within this repository was executed on the Oxford Biomedical Research Computing (BMRC) servers. While individual threads were allocated varying CPUs and GPUs, general information about the BRMC resources can be found at [_Using the BMRC Cluster with Slurm_](https://www.medsci.ox.ac.uk/for-staff/resources/bmrc/using-the-bmrc-cluster-with-slurm) and [_GPU Resources_](https://www.medsci.ox.ac.uk/for-staff/resources/bmrc/gpu-resources).
+
 ## 🎯 Requirements
 The analyses and visualizations in this paper had following dependencies:
 
