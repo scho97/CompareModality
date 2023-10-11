@@ -184,20 +184,20 @@ def plot_single_grouped_violin(data, group_label, method_name, filename, xlbl=No
         vmax = np.max(np.array(vmax))
         ht = (vmax - vmin) * 0.045
         p_lbl = categorize_pvalue(pval)
-        if p_lbl != "n.s.":
-            ax.text(
-                vp.get_xticks(),
-                vmax + ht,
-                p_lbl, 
-                ha="center", va="center", color="k", 
-                fontsize=15, fontweight="bold"
-            )
+        ax.text(
+            vp.get_xticks(),
+            vmax + ht,
+            p_lbl, 
+            ha="center", va="center", color="k", 
+            fontsize=20, fontweight="bold"
+        )
     sns.despine(fig=fig, ax=ax) # get rid of top and right axes
+    for axis in ["bottom", "left"]:
+        ax.spines[axis].set_linewidth(3)
+    ax.set(xticks = [], xlabel = "")
+    ax.set_ylabel(ylbl, fontsize=22, fontweight="bold")
     ax.set_ylim([ax.get_ylim()[0], ax.get_ylim()[1] + np.max(vmax - vmin) * 0.05])
-    ax.set_xlabel(f"{lbl} {xlbl}", fontsize=18)
-    ax.set_ylabel(ylbl, fontsize=18)
-    ax.set_xticks([])
-    ax.tick_params(labelsize=18)
+    ax.tick_params(labelsize=24)
     ax.get_legend().remove()
     plt.tight_layout()
     fig.savefig(filename)
