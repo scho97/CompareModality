@@ -183,7 +183,7 @@ def plot_single_grouped_violin(data, group_label, method_name, filename, xlbl=No
         vmin = np.min(np.array(vmin))
         vmax = np.max(np.array(vmax))
         ht = (vmax - vmin) * 0.045
-        p_lbl = categrozie_pvalue(pval)
+        p_lbl = categorize_pvalue(pval)
         if p_lbl != "n.s.":
             ax.text(
                 vp.get_xticks(),
@@ -258,7 +258,7 @@ def plot_grouped_violin(data, group_label, method_name, filename, ylbl=None, pva
         vmax = np.max(np.array(vmax).reshape(-1, 2), axis=1)
         ht = (vmax - vmin) * 0.045
         for i, p in enumerate(pval):
-            p_lbl = categrozie_pvalue(p)
+            p_lbl = categorize_pvalue(p)
             if p_lbl != "n.s.":
                 ax.text(
                     vp.get_xticks()[i], 
@@ -284,7 +284,7 @@ def plot_grouped_violin(data, group_label, method_name, filename, ylbl=None, pva
 
     return None
 
-def categrozie_pvalue(pval):
+def categorize_pvalue(pval):
     """Assigns a label indicating statistical significance that corresponds 
     to an input p-value.
 
