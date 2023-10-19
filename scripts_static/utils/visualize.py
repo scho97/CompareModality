@@ -664,9 +664,7 @@ class GroupPSDDifference():
             if len(clu[0]) > 1:
                 ax.plot(self.freqs[clu], [ymax] * len(clu[0]), color="tab:red", lw=5, alpha=0.7)
             else:
-                ax.plot(self.freqs[clu], ymax, marker="s", markersize=12,
-                        markeredgecolor="tab:red", marker_edgewidth=12,
-                        markerfacecolor="tab:red", alpha=0.7)
+                ax.plot(np.array([self.freqs[clu[0]], self.freqs[clu[0] + 1]]), [ymax] * 2, color="tab:red", lw=5, alpha=0.7)
 
         # Add manual colorbar for topographies at the top
         cb_ax = ax.inset_axes([0.78, 1.12, 0.03, 0.22])
