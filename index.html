@@ -1,1 +1,273 @@
-Test Page
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+<!-- ======================================================================= -->
+<script src="http://www.google.com/jsapi" type="text/javascript"></script>
+<script type="text/javascript">google.load("jquery", "1.3.2");</script>
+<style type="text/css">
+  body {
+    font-family: "Crimson Text","HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-weight:300;
+    font-size:18px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+  }
+
+  pre {
+    background-color: #f6f8fa;
+    padding: 16px;
+  }
+
+  code {
+    font-family: "SFMono-Regular","Consolas","Liberation Mono","Menlo",monospace;
+    overflow: scroll;
+  }
+
+  h1 {
+    font-family: "Source Sans Pro";
+    font-weight:300;
+  }
+
+  div {
+    max-width: 95%;
+    margin:auto;
+    padding: 10px;
+  }
+
+  .table-like {
+    display: flex;
+    flex-wrap: wrap;
+    flex-flow: row wrap;
+    justify-content: center;
+  }
+
+  .disclaimerbox {
+    background-color: #eee;
+    border: 1px solid #eeeeee;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+    padding: 20px;
+  }
+
+  video.header-vid {
+    height: 140px;
+    border: 1px solid black;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+  }
+
+  img {
+    padding: 0;
+    display: block;
+    margin: 0 auto;
+    max-height: 100%;
+    max-width: 100%;
+  }
+
+  iframe {
+    max-width: 100%;
+  }
+
+  img.header-img {
+    height: 140px;
+    border: 1px solid black;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+  }
+
+  img.rounded {
+    border: 1px solid #eeeeee;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+  }
+
+  a:link,a:visited
+  {
+    color: #1367a7;
+    text-decoration: none;
+  }
+  a:hover {
+    color: #208799;
+  }
+
+  td.dl-link {
+    height: 160px;
+    text-align: center;
+    font-size: 22px;
+  }
+
+  .layered-paper-big { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+    box-shadow:
+            0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+            5px 5px 0 0px #fff, /* The second layer */
+            5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+            10px 10px 0 0px #fff, /* The third layer */
+            10px 10px 1px 1px rgba(0,0,0,0.35), /* The third layer shadow */
+            15px 15px 0 0px #fff, /* The fourth layer */
+            15px 15px 1px 1px rgba(0,0,0,0.35), /* The fourth layer shadow */
+            20px 20px 0 0px #fff, /* The fifth layer */
+            20px 20px 1px 1px rgba(0,0,0,0.35), /* The fifth layer shadow */
+            25px 25px 0 0px #fff, /* The fifth layer */
+            25px 25px 1px 1px rgba(0,0,0,0.35); /* The fifth layer shadow */
+    margin-left: 10px;
+    margin-right: 45px;
+  }
+
+
+  .layered-paper { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+    box-shadow:
+            0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+            5px 5px 0 0px #fff, /* The second layer */
+            5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+            10px 10px 0 0px #fff, /* The third layer */
+            10px 10px 1px 1px rgba(0,0,0,0.35); /* The third layer shadow */
+    margin-top: 5px;
+    margin-left: 10px;
+    margin-right: 30px;
+    margin-bottom: 5px;
+  }
+
+  .vert-cent {
+    position: relative;
+      top: 50%;
+      transform: translateY(-50%);
+  }
+
+  hr
+  {
+    border: 0;
+    height: 1px;
+    max-width: 1100px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  }
+
+  #authors td {
+    padding-bottom:5px;
+    padding-top:30px;
+  }
+</style>
+<!-- ======================================================================= -->
+
+<script type="text/javascript" src="resources/hidebib.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script type="text/javascript" id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+<head>
+<div max-width=100%>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>MEG UKI 2023 Poster 2.18</title>
+<meta name="HandheldFriendly" content="True" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="canonical" href="https://scho97.github.io/" />
+<meta name="referrer" content="no-referrer-when-downgrade" />
+
+<meta property="og:site_name" content="CompareModality" />
+<meta property="og:type" content="video.other" />
+<meta property="og:title" content="Comparison of resting-state EEG and MEG in detecting the effects of healthy aging" />
+<meta property="og:description" content="SungJun Cho, Mats van Es, Chetan Gohil, Mark W. Woolrich. Comparison of resting-state EEG and MEG in detecting the effects of healthy aging, MEG UKI Conference, 2023." />
+<meta property="og:url" content="https://scho97.github.io/" />
+
+<meta property="article:publisher" content="https://scho97.github.io/" />
+<meta property="og:image:width" content="1600" />
+<meta property="og:image:height" content="900" />
+
+</head>
+
+<body>
+
+    <br>
+    <center><span style="font-size:44px;font-weight:bold;font-family:Source Sans Pro;">Comparison of resting-state EEG and MEG <br/> in detecting the effects of healthy aging</span></center><br/>
+    <div class="table-like" style="justify-content:space-evenly;max-width:900px;margin:auto;">
+        <div><center><span style="font-size:25px"><a href="https://cs.stanford.edu/~rewang" target="_blank">SungJun Cho</a></span></center>
+        <center><span style="font-size:18px">sungjun.cho@psych.ox.ac.uk</span></center>
+        <center><span style="font-size:23px">Oxford</span></center>
+        </div>
+
+        <div><center><span style="font-size:25px"><a href="https://profiles.stanford.edu/pawan-wirawarn" target="_blank">Mats van Es</a></span></center>
+        <center><span style="font-size:18px">mats.vanes@psych.ox.ac.uk</span></center>
+        <center><span style="font-size:23px">Oxford</span></center>
+        </div>
+
+        <div><center><span style="font-size:25px"><a href="https://cocolab.stanford.edu/ndg" target="_blank">Chetan Gohil</a></span></center>
+        <center><span style="font-size:18px">chetan.gohil@psych.ox.ac.uk</span></center>
+        <center><span style="font-size:23px">Oxford</span></center>
+        </div>
+
+        <div><center><span style="font-size:25px"><a href="https://www.dorademszky.com/" target="_blank">Mark W. Woolrich</a></span></center>
+        <center><span style="font-size:18px">mark.woolrich@ohba.ox.ac.uk</span></center>
+        <center><span style="font-size:23px">Oxford</span></center>
+        </div>
+    </div>
+
+    <center><span style="font-size:25px">MEG-UKI 2023 Conference</span></center>
+
+    <div class="table-like" style="justify-content:space-evenly;max-width:700px;margin:auto;padding:5px">
+      <div><center><span style="font-size:28px"><a href="">[Poster]</a></span></center></div>
+      <div><center><span style="font-size:28px"><a href="">[GitHub]</a></span></center> </div>
+      <div><center><span style="font-size:28px"><a href="">[Video]</a></span></center> </div>
+    </div>
+
+    <!-- <center>
+    <iframe width="768" height="432" src="https://www.youtube.com/embed/Yt-2jLJLKjI" allowfullscreen></iframe>
+    <br> -->
+
+    <div style="width:800px; margin:0 auto" align="justify">
+      <p>
+        <b>Abstract.</b> <i>Background</i> Aging is a significant risk factor for many neuropsychiatric disorders. To properly assess the impact of these conditions against controls, 
+        a comprehensive understanding of healthy aging is necessary. While the effects of healthy aging have been widely investigated in the resting-state networks (RSNs) of EEG and MEG, 
+        a formal comparison of these modalities in capturing such effects remains lacking. <i>Methods</i> In this study, we qualitatively compared M/EEG-driven static and dynamic brain 
+        network features to characterise how each modality represents age-related neural differences. We used openly available EEG LEMON and MEG CamCAN datasets to compute power spectra, 
+        power spatial maps, and functional connectivity (FC) of the whole-brain RSNs from 86 young (20-35 years) and 29 old (55-80 years) participants. <i>Results</i> Our findings indicate 
+        that MEG outperforms EEG in revealing static and dynamic differences between age groups. While our analysis of static power spectra unveiled comparable frequency ranges with age 
+        effects in MEG and EEG, only MEG demonstrated spatially localised age effects in source space. Furthermore, when examining dynamic network features in source space, MEG exhibited a 
+        greater number of network states with between-group power and FC differences compared to EEG. Nonetheless, our results do not suggest dismissing EEG, as it identified spectral and 
+        spatial age effects that do not overlap with those of MEG, implying the potential presence of distinct but complementary information within each modality. <i>Conclusion</i> Our study, 
+        therefore, proposes that the distinction between EEG and MEG should be carefully considered when interpreting the results of aging studies while recognising the complementary potentials 
+        of these modalities. Future studies combining the two will be instrumental in identifying how aging influences changes in healthy and diseased brains, leading to a more concrete picture 
+        of neuropsychiatric disorders associated with aging.
+      </p>
+    </div>
+    <br><hr>
+
+    <center><h1>Supplementary Information</h1></center>
+    <div style="width:800px; margin:0 auto" align="justify">
+      <p>
+        In this study, we used two openly available datasets &mdash; EEG LEMON and MEG CamCAN. From each dataset, a total of <b>96 subjects</b> was subsampled to compose an age-matched data, consisting 
+        of 60 young (aged between 20-35 years) and 36 old (aged between 55-80 years) participants.
+      </p>
+      <center><h2>Age Distributions</h2></center>
+      <!-- Code snippet of transcript -->
+      <p>
+        Below we show the age distributions of the subjects in the EEG LEMON and MEG CamCAN datasets. <b>(A)</b> shows histograms that depict the distributions of ages for the young (blue) and old (red) group in 
+        the EEG data. Similarly, <b>(B)</b> shows histograms of the young and old group in the MEG data.
+      </p>
+      <a href="assets/age_dist.png"><img src="assets/age_dist.png" width="800px" padding="10px"></img></a>
+      <br/>
+      <center><h2>Resting-State Networks of the Entire Subjects</h2></center>
+      <p>
+        In our poster, we highlight the group differences between two age cohorts using the HMM state-specific power maps. For clarity on which resting-state network corresponds to each HMM state, please 
+        reference the figure below. This figure provides a comprehensive overview of the power map, functional connectivity network, and parcel-averaged PSD for each HMM state across 96 <b>(A)</b> EEG and 
+        <a>(B)</a>> MEG participants.
+      </p>
+      <a href="assets/age_dist.png"><img src="assets/age_dist.png" width="800px" padding="10px"></img></a>
+    </div>
+
+  <br><hr>
+    <center id="acknowledgements"><h1>Acknowledgements</h1></center>
+    <p style="text-align: center">
+        The format of this website is adapted from several sources <a href="https://rosewang2008.github.io/sight/">[1]</a>, <a href="https://ezliu.github.io/dream/">[2]</a>, <a href="https://orybkin.github.io/video-gcp/">[3]</a>, and <a href="https://pathak22.github.io/modular-assemblies/">[4]</a>. </br>
+        Feel free to use this website as a template for your own projects by referencing relevant web pages.
+    </p>
+</div>
+</body>
+</html>
