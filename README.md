@@ -1,7 +1,7 @@
 # CompareModality
 Analysis of EEG LEMON and MEG CamCAN
 
-To appear in Chapter 2 of my master's thesis: _Inferring brain network dynamics of MEG and EEG in healthy aging and Alzheimer's disease_
+In Chapter 2 of my master's thesis: [_Inferring brain network dynamics of MEG and EEG in healthy aging and Alzheimer's disease_](https://ora.ox.ac.uk/objects/uuid:27faa894-b350-4da4-a7e4-7611dbd86791)
 
 💡 Please email SungJun Cho at sungjun.cho@psych.ox.ac.uk with any questions or concerns.
 
